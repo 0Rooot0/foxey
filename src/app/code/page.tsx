@@ -21,6 +21,9 @@ export default function CodePage() {
 
       <section className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[2fr_1fr]">
         <div className="border-b border-zinc-800 p-6 lg:border-b-0 lg:border-r">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
+            Editor
+          </h2>
           <div className="h-full min-h-[500px] rounded-lg border border-zinc-800 bg-zinc-900 p-4 font-mono text-sm text-zinc-300">
             Code editor will go here.
           </div>
