@@ -1,4 +1,9 @@
+"use client";
+import { useState } from "react";
+
 export default function CodePage() {
+  const[language, setLanguage] = useState("python");
+
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
       <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
@@ -8,7 +13,10 @@ export default function CodePage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <select className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm">
+          <select 
+          value = {language}
+          onChange={(event) => setLanguage(event.target.value)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm">
             <option>Python</option>
             <option>JavaScript</option>
           </select>
