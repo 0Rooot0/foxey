@@ -1,8 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Editor from "@monaco-editor/react"
 
 export default function CodePage() {
-  const[language, setLanguage] = useState("python");
+  type Language = "python" | "javascript";
+
+  const [language, setLanguage] = useState<Language>("python");
+
+  const [code, setCode] = useState({
+    python: "# Start coding with Foxey",
+    javascript: "// Start coding with Foxey",
+  });
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -13,12 +21,15 @@ export default function CodePage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <select 
-          value = {language}
-          onChange={(event) => setLanguage(event.target.value)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm">
-            <option>Python</option>
-            <option>JavaScript</option>
+          <select
+            value={language}
+            onChange={(event) =>
+              setLanguage(event.target.value as Language)
+            }
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+          >
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
           </select>
 
           <button className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black">
@@ -32,9 +43,21 @@ export default function CodePage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
             Editor
           </h2>
-          <div className="h-full min-h-[500px] rounded-lg border border-zinc-800 bg-zinc-900 p-4 font-mono text-sm text-zinc-300">
-            Code editor will go here.
-          </div>
+          <div className="h-[500px] overflow-hidden rounded-lg border border-zinc-800">
+          <Editor
+              key={language}
+              height="100%"
+              language={language}
+              value={code[language]}
+              theme="vs-dark"
+              onChange={(value) =>
+                setCode((previousCode) => ({
+                  ...previousCode,
+                  [language]: value ?? "",
+                }))
+              }
+            />
+        </div>
         </div>
 
         <aside className="p-6">
