@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { runJavaScript } from "@/lib/runners/javascriptRunner";
+import { runPython } from "@/lib/runners/pythonRunner";
 
 export default function CodePage() {
   type Language = "python" | "javascript";
@@ -27,8 +28,13 @@ export default function CodePage() {
       return;
     }
 
-    setOutput("Python execution is coming next.");
+    if (language === "python") {
+      const result = await runPython(code.python);
+      setOutput(result);
+      return;
+    }
   }
+
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
