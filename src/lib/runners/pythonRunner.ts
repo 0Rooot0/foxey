@@ -1,85 +1,32 @@
-type PyodideRuntime = {
-  runPythonAsync: (code: string) => Promise<unknown>;
-  setStdout: (options: {
-    batched: (text: string) => void;
-  }) => void;
-  setStderr: (options: {
-    batched: (text: string) => void;
-  }) => void;
-};
+let pythonWorker: Worker | null = null;
 
-declare global {
-  interface Window {
-    loadPyodide?: (options: {
-      indexURL: string;
-    }) => Promise<PyodideRuntime>;
+function getPythonWorker(): Worker {
+  // Create the worker once and reuse it so Pyodide stays initialized.
+  if (!pythonWorker) {
+    pythonWorker = new Worker(
+      new URL("./pythonWorker.ts", import.meta.url)
+    );
   }
+
+  return pythonWorker;
 }
 
-let scriptReadyPromise: Promise<void> | null = null;
-let pyodidePromise: Promise<PyodideRuntime> | null = null;
+export function runPython(code: string): Promise<string> {
+  return new Promise((resolve) => {
+    const worker = getPythonWorker();
 
-async function loadPyodideScript(): Promise<void> {
-  if (window.loadPyodide) {
-    return;
-  }
+    worker.onmessage = (event) => {
+      resolve(
+        event.data.output ||
+          "Code finished with no output."
+      );
+    };
 
-  if (!scriptReadyPromise) {
-    scriptReadyPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
+    // Convert worker-level failures into a readable result for the UI.
+    worker.onerror = () => {
+      resolve("Python execution failed.");
+    };
 
-      script.src =
-        "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.js";
-
-      script.onload = () => resolve();
-
-      script.onerror = () => {
-        scriptReadyPromise = null;
-        reject(new Error("Failed to load Pyodide."));
-      };
-
-      document.head.appendChild(script);
-    });
-  }
-
-  await scriptReadyPromise;
-}
-
-async function getPyodide(): Promise<PyodideRuntime> {
-  await loadPyodideScript();
-
-  if (!window.loadPyodide) {
-    throw new Error("Pyodide failed to load.");
-  }
-
-  if (!pyodidePromise) {
-    pyodidePromise = window.loadPyodide({
-      indexURL:
-        "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/",
-    });
-  }
-
-  return pyodidePromise;
-}
-
-export async function runPython(code: string): Promise<string> {
-  try {
-    const pyodide = await getPyodide();
-
-    const output: string[] = [];
-
-    pyodide.setStdout({
-      batched: (text) => output.push(text),
-    });
-
-    pyodide.setStderr({
-      batched: (text) => output.push(text),
-    });
-
-    await pyodide.runPythonAsync(code);
-
-    return output.join("\n") || "Code finished with no output.";
-  } catch (error) {
-    return String(error);
-  }
+    worker.postMessage({ code });
+  });
 }
