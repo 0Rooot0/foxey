@@ -19,22 +19,28 @@ export default function CodePage() {
     "Run your code to see output."
   );
 
+  const [isRunning, setIsRunning] = useState(false);
+
   async function handleRun() {
+    setIsRunning(true);
     setOutput("Running...");
 
-    if (language === "javascript") {
-      const result = await runJavaScript(code.javascript);
-      setOutput(result);
-      return;
-    }
+    try {
+      if (language === "javascript") {
+        const result = await runJavaScript(code.javascript);
+        setOutput(result);
+        return;
+      }
 
-    if (language === "python") {
-      const result = await runPython(code.python);
-      setOutput(result);
-      return;
+      if (language === "python") {
+        const result = await runPython(code.python);
+        setOutput(result);
+        return;
+      }
+    } finally {
+      setIsRunning(false);
     }
   }
-
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -68,9 +74,10 @@ export default function CodePage() {
 
           <button
             onClick={handleRun}
-            className="cursor-pointer rounded-md bg-white px-4 py-2 text-sm font-medium text-black"
+            disabled={isRunning}
+            className="cursor-pointer rounded-md bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Run
+            {isRunning ? "Running..." : "Run"}
           </button>
         </div>
       </header>
