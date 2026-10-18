@@ -1,3 +1,5 @@
+import CodeWorkspace from "@/components/CodeWorkspace";
+
 type RoomPageProps = {
   params: Promise<{
     roomId: string;
@@ -10,16 +12,14 @@ export default async function RoomPage({
   const { roomId } = await params;
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-6">
-        <h1 className="text-2xl font-semibold">
-          Foxey Room
-        </h1>
-
-        <p className="mt-2 text-zinc-400">
-          Room ID: {roomId}
+    <div className="bg-zinc-950 text-white">
+      <div className="border-b border-zinc-800 px-6 py-3">
+        <p className="text-sm text-zinc-400">
+          Room: {roomId}
         </p>
       </div>
-    </main>
+
+      <CodeWorkspace />
+    </div>
   );
 }
