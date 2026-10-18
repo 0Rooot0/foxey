@@ -1,6 +1,7 @@
 const PYTHON_TIMEOUT_MS = 5000;
 
 let pythonWorker: Worker | null = null;
+let cancelActiveRun: (() => void) | null = null;
 
 function getPythonWorker(): Worker {
   // Reuse one worker so Pyodide stays initialized between successful runs.
@@ -14,9 +15,13 @@ function getPythonWorker(): Worker {
 }
 
 function resetPythonWorker(): void {
-  // Terminating the worker also stops any Python code currently running.
+  // Terminating the worker immediately stops any Python currently running.
   pythonWorker?.terminate();
   pythonWorker = null;
+}
+
+export function cancelPython(): void {
+  cancelActiveRun?.();
 }
 
 export function runPython(code: string): Promise<string> {
@@ -24,6 +29,7 @@ export function runPython(code: string): Promise<string> {
     const worker = getPythonWorker();
 
     let finished = false;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
 
     const finish = (result: string) => {
       if (finished) {
@@ -31,11 +37,22 @@ export function runPython(code: string): Promise<string> {
       }
 
       finished = true;
-      clearTimeout(timeout);
+
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+
+      cancelActiveRun = null;
+
       resolve(result);
     };
 
-    const timeout = setTimeout(() => {
+    cancelActiveRun = () => {
+      resetPythonWorker();
+      finish("Execution cancelled.");
+    };
+
+    timeout = setTimeout(() => {
       resetPythonWorker();
       finish("Execution timed out.");
     }, PYTHON_TIMEOUT_MS);

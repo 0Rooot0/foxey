@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { runJavaScript } from "@/lib/runners/javascriptRunner";
-import { runPython } from "@/lib/runners/pythonRunner";
+import {
+  cancelPython,
+  runPython,
+} from "@/lib/runners/pythonRunner";
 
 export default function CodePage() {
   type Language = "python" | "javascript";
@@ -39,6 +42,11 @@ export default function CodePage() {
       }
     } finally {
       setIsRunning(false);
+    }
+  }
+  function handleCancel() {
+  if (language === "python") {
+    cancelPython();
     }
   }
 
@@ -79,6 +87,14 @@ export default function CodePage() {
           >
             {isRunning ? "Running..." : "Run"}
           </button>
+          {isRunning && language === "python" && (
+          <button
+            onClick={handleCancel}
+            className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium text-white"
+          >
+            Cancel
+          </button>
+          )}
         </div>
       </header>
 

@@ -68,8 +68,30 @@ workerScope.onmessage = async (
         "Code finished with no output.",
     });
   } catch (error) {
-    workerScope.postMessage({
-      output: String(error),
-    });
-  }
+  const message = String(error);
+
+  // Keep only useful traceback lines and report the student's source line
+  // together with the final Python error.
+  const lines = message
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const errorLine = lines.at(-1) ?? message;
+
+  const sourceLine = [...lines]
+    .reverse()
+    .find((line) => line.includes('File "<exec>", line '));
+
+  const lineNumber =
+    sourceLine?.match(/line (\d+)/)?.[1];
+
+  const output = lineNumber
+    ? `Line ${lineNumber} — ${errorLine}`
+    : errorLine;
+
+  workerScope.postMessage({
+    output,
+  });
+}
 };
