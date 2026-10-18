@@ -1,3 +1,10 @@
+let javascriptWorker: Worker | null = null;
+let cancelActiveRun: (() => void) | null = null;
+
+export function cancelJavaScript(): void {
+  cancelActiveRun?.();
+}
+
 export function runJavaScript(code: string): Promise<string> {
   return new Promise((resolve) => {
     const workerCode = `
@@ -30,22 +37,46 @@ export function runJavaScript(code: string): Promise<string> {
 
     const workerUrl = URL.createObjectURL(blob);
 
-    const worker = new Worker(workerUrl);
+    javascriptWorker = new Worker(workerUrl);
+    const worker = javascriptWorker;
+
+    let finished = false;
+
+    const finish = (result: string) => {
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+      cancelActiveRun = null;
+      resolve(result);
+    };
 
     const timeout = setTimeout(() => {
       worker.terminate();
+      javascriptWorker = null;
       URL.revokeObjectURL(workerUrl);
-      resolve("Execution timed out.");
+      finish("Execution timed out.");
     }, 2000);
+
+    cancelActiveRun = () => {
+      clearTimeout(timeout);
+      worker.terminate();
+      javascriptWorker = null;
+      URL.revokeObjectURL(workerUrl);
+      finish("Execution cancelled.");
+    };
 
     worker.onmessage = (event) => {
       clearTimeout(timeout);
-
       worker.terminate();
-
+      javascriptWorker = null;
       URL.revokeObjectURL(workerUrl);
 
-      resolve(event.data.output || "Code finished with no output.");
+      finish(
+        event.data.output ||
+          "Code finished with no output."
+      );
     };
 
     worker.postMessage(code);
