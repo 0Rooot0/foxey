@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
+import * as Y from "yjs";
+import { connectRoomToSupabase } from "@/lib/collaboration/roomSync";
 import {
   cancelJavaScript,
   runJavaScript,
@@ -13,8 +16,24 @@ import {
 
 type Language = "python" | "javascript";
 
-export default function CodeWorkspace() {
+type CodeWorkspaceProps = {
+  roomId?: string;
+};
+
+export default function CodeWorkspace({
+  roomId,
+}: CodeWorkspaceProps) {
   const [language, setLanguage] = useState<Language>("python");
+
+  const editorRef =
+    useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  const ydocRef = useRef<Y.Doc | null>(null);
+
+  const bindingRef =
+    useRef<import("y-monaco").MonacoBinding | null>(null);
+
+  const sharedOutputRef = useRef<Y.Text | null>(null);
 
   const [code, setCode] = useState({
     python: "# Start coding with Foxey",
@@ -27,20 +46,72 @@ export default function CodeWorkspace() {
 
   const [isRunning, setIsRunning] = useState(false);
 
+  useEffect(() => {
+    if (!roomId) return;
+
+    const ydoc = new Y.Doc();
+    ydocRef.current = ydoc;
+
+    const sharedOutput = ydoc.getText("shared-output");
+    sharedOutputRef.current = sharedOutput;
+
+    const handleSharedOutput = () => {
+      const value = sharedOutput.toString();
+
+      if (value) {
+        setOutput(value);
+      }
+    };
+
+    sharedOutput.observe(handleSharedOutput);
+
+    const disconnect = connectRoomToSupabase(
+      roomId,
+      ydoc
+    );
+
+    return () => {
+      sharedOutput.unobserve(handleSharedOutput);
+
+      bindingRef.current?.destroy();
+      disconnect();
+      ydoc.destroy();
+
+      bindingRef.current = null;
+      ydocRef.current = null;
+      sharedOutputRef.current = null;
+    };
+  }, [roomId]);
+
+  function updateOutput(value: string) {
+    setOutput(value);
+
+    if (!roomId || !sharedOutputRef.current) {
+      return;
+    }
+
+    const sharedOutput = sharedOutputRef.current;
+
+    sharedOutput.doc?.transact(() => {
+      sharedOutput.delete(0, sharedOutput.length);
+      sharedOutput.insert(0, value);
+    });
+  }
+
   async function handleRun() {
     setIsRunning(true);
-    setOutput("Running...");
+    updateOutput("Running...");
 
     try {
       if (language === "javascript") {
         const result = await runJavaScript(code.javascript);
-        setOutput(result);
+        updateOutput(result);
         return;
       }
 
       if (language === "python") {
         const result = await runPython(code.python);
-        setOutput(result);
+        updateOutput(result);
         return;
       }
     } finally {
@@ -121,6 +192,28 @@ export default function CodeWorkspace() {
               language={language}
               value={code[language]}
               theme="vs-dark"
+              onMount={async (editorInstance) => {
+                editorRef.current = editorInstance;
+
+                if (!roomId || !ydocRef.current) {
+                  return;
+                }
+
+                bindingRef.current?.destroy();
+
+                const ytext = ydocRef.current.getText(
+                  `code:${language}`
+                );
+
+                const { MonacoBinding } =
+                  await import("y-monaco");
+
+                bindingRef.current = new MonacoBinding(
+                  ytext,
+                  editorInstance.getModel()!,
+                  new Set([editorInstance])
+                );
+              }}
               onChange={(value) =>
                 setCode((previousCode) => ({
                   ...previousCode,
