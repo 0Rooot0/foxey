@@ -18,10 +18,12 @@ type Language = "python" | "javascript";
 
 type CodeWorkspaceProps = {
   roomId?: string;
+  roomName?: string;
 };
 
 export default function CodeWorkspace({
   roomId,
+  roomName,
 }: CodeWorkspaceProps) {
   const [language, setLanguage] = useState<Language>("python");
 
@@ -45,6 +47,23 @@ export default function CodeWorkspace({
   );
 
   const [isRunning, setIsRunning] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState("");
+  const [manualInvite, setManualInvite] = useState("");
+
+  async function copyInviteLink() {
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.hash = "";
+    if (roomName) url.searchParams.set("name", roomName);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setManualInvite("");
+      setInviteStatus("Invite link copied!");
+    } catch {
+      setManualInvite(url.toString());
+      setInviteStatus("Select and copy the invite link below.");
+    }
+  }
 
   useEffect(() => {
     if (!roomId) return;
@@ -132,18 +151,25 @@ export default function CodeWorkspace({
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 px-6 py-4">
         <div>
           <h1 className="text-xl font-semibold">
             Foxey Workspace
           </h1>
 
           <p className="text-sm text-zinc-400">
-            Untitled session
+            {roomName || (roomId ? `Room ${roomId}` : "Untitled session")}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {roomId && (
+            <div className="flex flex-col gap-1">
+              <button onClick={copyInviteLink} className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium">Copy invite link</button>
+              <span role="status" className="text-xs text-zinc-400">{inviteStatus}</span>
+              {manualInvite && <input aria-label="Invite link" readOnly value={manualInvite} onFocus={(event) => event.target.select()} className="rounded border border-zinc-700 bg-zinc-900 p-2 text-sm" />}
+            </div>
+          )}
           <select
             value={language}
             onChange={(event) =>

@@ -8,9 +8,15 @@ export default function Home() {
   const router = useRouter();
   const [roomId, setRoomId] = useState("");
 
-  function handleCreateRoom() {
-    const newRoomId = crypto.randomUUID().slice(0, 8);
-    router.push(`/room/${newRoomId}`);
+  const [creatingRoom, setCreatingRoom] = useState(false);
+  const [roomName, setRoomName] = useState("");
+
+  function handleCreateRoom(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = roomName.trim();
+    if (!name) return;
+    const newRoomId = crypto.randomUUID();
+    router.push(`/room/${newRoomId}?name=${encodeURIComponent(name)}`);
   }
 
   function handleJoinRoom() {
@@ -79,12 +85,32 @@ export default function Home() {
       </button>
     </div>
 
+    {creatingRoom ? (
+      <form onSubmit={handleCreateRoom} className="mt-4 text-left">
+        <label htmlFor="room-name" className="text-sm font-medium text-white">Room name</label>
+        <input
+          id="room-name"
+          autoFocus
+          required
+          maxLength={80}
+          value={roomName}
+          onChange={(event) => setRoomName(event.target.value)}
+          placeholder="e.g. Python Practice"
+          className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-white"
+        />
+        <div className="mt-3 flex gap-2">
+          <button type="submit" disabled={!roomName.trim()} className="flex-1 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-50">Create Room</button>
+          <button type="button" onClick={() => setCreatingRoom(false)} className="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm text-white">Cancel</button>
+        </div>
+      </form>
+    ) : (
     <button
-      onClick={handleCreateRoom}
+      onClick={() => setCreatingRoom(true)}
       className="mt-3 w-full cursor-pointer rounded-lg bg-zinc-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700"
     >
       Create New Room
     </button>
+    )}
   </div>
 </div>
     </main>
