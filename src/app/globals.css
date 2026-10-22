@@ -58,8 +58,8 @@ a, button, select, input { -webkit-tap-highlight-color: transparent; }
 
 .foxey-brand { display: inline-flex; align-items: center; gap: 9px; font-size: 28px; font-weight: 750; letter-spacing: -1.2px; white-space: nowrap; }
 .foxey-brand-accent { color: #ff581a; }
-.foxey-brand-icon { width: 43px; height: 43px; overflow: hidden; border-radius: 50%; background: #050609; position: relative; }
-.foxey-brand-icon img { width: 145px; height: auto; max-width: none; position: absolute; left: -49px; top: -5px; }
+.foxey-brand-icon { width: 43px; height: 43px; display: inline-flex; flex-shrink: 0; }
+.foxey-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
 .foxey-brand small { font-size: 14px; letter-spacing: -.4px; color: #fff; background: #ff581a; border-radius: 6px; padding: 5px 7px; }
 .student-avatar { display: inline-flex; overflow: hidden; flex-shrink: 0; border: 2px solid var(--avatar-color); border-radius: 50%; background: #26364a; box-shadow: 0 0 0 2px #101c2a; vertical-align: middle; }
 .student-avatar svg { width: 100%; height: 100%; }
