@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import StudentAvatar from "./StudentAvatar";
 import type { ConnectionStatus, Participant } from "@/lib/collaboration/roomSync";
 
 export type ChatMessage = { id: string; author: string; text: string };
@@ -26,7 +27,7 @@ export default function RoomPanel({ roomId, status, participants, messages, self
     <aside className="edu-social" aria-label="Room collaboration">
       <div className="participant-heading"><h2>Participants</h2><span>{roomId ? participants.length : 1}</span></div>
       <p className="connection-status" role="status"><span className={status === "connected" && roomId ? "online-dot" : "offline-dot"} />{roomId ? (status === "connected" ? "Connected to room" : status === "connecting" ? "Connecting…" : "Disconnected · reconnecting") : "Personal workspace"}</p>
-      {roomId ? <ul className="participant-list">{participants.map((person) => <li key={person.id}><span className="edu-avatar">{person.name.slice(0, 1)}</span><span>{person.name}{person.id === selfId && <small> (you)</small>}<small>In this room</small></span><span className="online-dot" /></li>)}</ul> : <div className="personal-room"><span className="edu-avatar">Y</span><span>You</span></div>}
+      {roomId ? <ul className="participant-list">{participants.map((person) => <li key={person.id}><StudentAvatar variant={person.avatar} color={person.color} name={person.name} /><span>{person.name}{person.id === selfId && <small> (you)</small>}<small>In this room</small></span><span className="online-dot" /></li>)}</ul> : <div className="personal-room"><span className="edu-avatar">Y</span><span>You</span></div>}
       <div className="room-tip">{roomId ? "Share your invite link to bring someone into this room." : <><p>Create a room to code and chat together.</p><Link className="edu-button" href="/#classroom">Create a room →</Link></>}</div>
       <section className="room-chat" aria-labelledby="chat-heading">
         <h2 id="chat-heading">Room chat <span>↗</span></h2>

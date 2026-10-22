@@ -7,6 +7,9 @@ import { ThemeToggle, useTheme } from "@/components/ThemeProvider";
 import "./workspace.css";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
+import { Awareness } from "y-protocols/awareness";
+import StudentAvatar from "./StudentAvatar";
+import FoxeyBrand from "./FoxeyBrand";
 import { connectRoomToSupabase, type Participant, type ConnectionStatus } from "@/lib/collaboration/roomSync";
 import RoomPanel, { type ChatMessage } from "@/components/RoomPanel";
 import {
@@ -37,6 +40,7 @@ export default function CodeWorkspace({
     useRef<editor.IStandaloneCodeEditor | null>(null);
 
   const ydocRef = useRef<Y.Doc | null>(null);
+  const awarenessRef = useRef<Awareness | null>(null);
 
   const bindingRef =
     useRef<import("y-monaco").MonacoBinding | null>(null);
@@ -81,6 +85,11 @@ export default function CodeWorkspace({
 
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
+    const awareness = new Awareness(ydoc);
+    awarenessRef.current = awareness;
+    let name = `Guest ${String(ydoc.clientID).slice(-4)}`;
+    try { name = localStorage.getItem("foxey-display-name")?.trim().slice(0, 40) || name; } catch {}
+    awareness.setLocalStateField("user", { name });
 
     const sharedOutput = ydoc.getText("shared-output");
     sharedOutputRef.current = sharedOutput;
@@ -105,6 +114,7 @@ export default function CodeWorkspace({
       roomId,
       ydoc,
       {
+        awareness,
         onParticipants: (people) => { setParticipants(people); setSelfId(String(ydoc.clientID)); },
         onStatus: setConnectionStatus,
       }
@@ -117,6 +127,8 @@ export default function CodeWorkspace({
 
       bindingRef.current?.destroy();
       disconnect();
+      awareness.destroy();
+      awarenessRef.current = null;
       ydoc.destroy();
 
       bindingRef.current = null;
@@ -143,7 +155,7 @@ export default function CodeWorkspace({
   function sendMessage(text: string) {
     const doc = ydocRef.current;
     if (!doc || !chatRef.current || connectionStatus !== "connected") return;
-    chatRef.current.push([{ id: crypto.randomUUID(), author: `Guest ${String(doc.clientID).slice(-4)}`, text: text.slice(0, 1000) }]);
+    chatRef.current.push([{ id: crypto.randomUUID(), author: awarenessRef.current?.getLocalState()?.user?.name || `Guest ${String(doc.clientID).slice(-4)}`, text: text.slice(0, 1000) }]);
   }
 
   async function handleRun() {
@@ -182,14 +194,22 @@ export default function CodeWorkspace({
 
   return (
     <main className="edu">
+      <style>{participants.filter((person) => /^\d+$/.test(person.id)).map((person) => `
+        .yRemoteSelection-${person.id} { background: ${person.color.replace(")", " / .2)")}; }
+        .yRemoteSelectionHead-${person.id} { border-color: ${person.color}; }
+        .yRemoteSelectionHead-${person.id}::after { background: ${person.color}; content: ${JSON.stringify(person.name)}; }
+      `).join("\n")}</style>
       <a className="edu-skip" href="#code-editor">Skip to editor</a>
       <header className="edu-header">
-        <Link href="/" className="edu-brand">Foxey<span>.</span><small>EDU</small></Link>
+        <Link href="/" className="edu-brand" aria-label="Foxey home"><FoxeyBrand edu /></Link>
         <div className="edu-room"><span>WORKSPACE</span><h1>{roomName || (roomId ? `Room ${roomId}` : "Personal workspace")}</h1></div>
         <div className="edu-header-actions">
           <ThemeToggle />
           {roomId && <button className="edu-button" onClick={copyInviteLink}>Invite people ↗</button>}
-          <span className="edu-avatar" aria-label="You">Y</span>
+          <div className="live-avatar-stack" aria-label="Students in this room">
+            {participants.slice(0, 5).map((person) => <StudentAvatar key={person.id} variant={person.avatar} color={person.color} name={person.name} />)}
+            {participants.length > 5 && <span className="more-students">+{participants.length - 5}</span>}
+          </div>
         </div>
       </header>
       {inviteStatus && <div role="status" className="invite-status">{inviteStatus}{manualInvite && <input aria-label="Invite link" readOnly value={manualInvite} onFocus={(event) => event.target.select()} />}</div>}
@@ -201,14 +221,26 @@ export default function CodeWorkspace({
           <button disabled title="Assignments are not available yet"><span>▤</span> Assignments <small>Soon</small></button>
           <button disabled title="Progress tracking is not available yet"><span>↗</span> Progress <small>Soon</small></button>
           <button onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="workspace-settings"><span>⚙</span> Settings</button>
-          {settingsOpen && <div id="workspace-settings" className="edu-settings"><p>Appearance</p><ThemeToggle /><p>Theme applies to your workspace and editor.</p></div>}
+          {settingsOpen && <div id="workspace-settings" className="edu-settings"><p>Appearance</p><ThemeToggle /><p>Theme applies to your workspace and editor.</p>
+            {roomId && <form onSubmit={(event) => {
+              event.preventDefault();
+              const name = String(new FormData(event.currentTarget).get("name") || "").trim().slice(0, 40);
+              if (!name) return;
+              awarenessRef.current?.setLocalStateField("user", { name });
+              try { localStorage.setItem("foxey-display-name", name); } catch {}
+            }}>
+              <label htmlFor="student-name">Your display name</label>
+              <input id="student-name" name="name" maxLength={40} required placeholder="e.g. Ava" defaultValue={participants.find((person) => person.id === selfId)?.name} />
+              <button className="edu-button" type="submit">Update name</button>
+            </form>}</div>}
+          <div className="edu-room-list"><p>ROOMS</p><a href="#code-editor" className="current-room"><i />{roomName || "Current session"}</a><Link href="/#classroom">+ Create or join a room</Link></div>
           <div className="edu-nav-bottom"><span className="edu-brand-accent">A little curiosity.</span><p>A lot of possibility.</p><small>Foxey Labs</small></div>
         </nav>
         <section className="edu-center" aria-label="Coding workspace">
           <div className="edu-toolbar">
             <div><span className="file-dot" /> <strong>{language === "python" ? "main.py" : "main.js"}</strong><span className="edu-toolbar-label">{roomId ? "Shared editor" : "Personal editor"}</span></div>
             <div className="edu-run-actions">
-              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { bindingRef.current?.destroy(); bindingRef.current = null; setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
+              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { bindingRef.current?.destroy(); bindingRef.current = null; awarenessRef.current?.setLocalStateField("selection", null); setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
               <button className="edu-button edu-run" onClick={handleRun} disabled={isRunning}>{isRunning ? "Running…" : "▶ Run code"}</button>
               {isRunning && <button className="edu-button" onClick={handleCancel}>Cancel</button>}
             </div>
@@ -251,7 +283,8 @@ export default function CodeWorkspace({
                 bindingRef.current = new MonacoBinding(
                   ytext,
                   editorInstance.getModel()!,
-                  new Set([editorInstance])
+                  new Set([editorInstance]),
+                  awarenessRef.current
                 );
               }}
               onChange={(value) =>

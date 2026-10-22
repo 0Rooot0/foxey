@@ -1,9 +1,12 @@
 import * as Y from "yjs";
 import { supabase } from "@/lib/supabase/client";
 
-export type Participant = { id: string; name: string };
+import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates, type Awareness } from "y-protocols/awareness";
+import { participantAppearance, type Participant } from "./participants";
+export type { Participant } from "./participants";
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 type RoomOptions = {
+  awareness?: Awareness;
   onParticipants?: (participants: Participant[]) => void;
   onStatus?: (status: ConnectionStatus) => void;
 };
@@ -19,6 +22,45 @@ export function connectRoomToSupabase(
   });
   let connected = false;
   let disposed = false;
+  const awareness = options.awareness;
+  let previousPeers = new Set<string>();
+  let participantSnapshot = "";
+
+  function publishParticipants() {
+    const people = Object.entries(channel.presenceState<{ name: string }>())
+      .filter(([key]) => /^\d+$/.test(key))
+      .map(([key, entries]) => {
+        const user = awareness?.getStates().get(Number(key))?.user;
+        return {
+          id: key,
+          name: typeof user?.name === "string" ? user.name.slice(0, 40) : typeof entries[0]?.name === "string" ? entries[0].name.slice(0, 40) : "Guest",
+          ...participantAppearance(key),
+        };
+      });
+    const snapshot = JSON.stringify(people);
+    if (snapshot !== participantSnapshot) {
+      participantSnapshot = snapshot;
+      options.onParticipants?.(people);
+    }
+  }
+
+  function broadcastAwareness() {
+    if (!awareness || !connected) return;
+    void channel.send({
+      type: "broadcast", event: "awareness-update",
+      payload: { update: Array.from(encodeAwarenessUpdate(awareness, [ydoc.clientID])) },
+    });
+  }
+
+  const handleAwareness = (_changes: unknown, origin: unknown) => {
+    publishParticipants();
+    if (origin !== "remote") broadcastAwareness();
+  };
+  awareness?.on("update", handleAwareness);
+  channel.on("broadcast", { event: "awareness-update" }, ({ payload }) => {
+    if (!awareness || !Array.isArray(payload.update)) return;
+    try { applyAwarenessUpdate(awareness, new Uint8Array(payload.update), "remote"); } catch { /* Ignore malformed presence packets. */ }
+  });
 
   function applyRemote(update: unknown) {
     if (!Array.isArray(update) || !update.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)) return;
@@ -45,13 +87,15 @@ export function connectRoomToSupabase(
   });
 
   channel.on("presence", { event: "sync" }, () => {
-    const people = Object.entries(channel.presenceState<{ name: string }>()).map(([key, entries]) => ({
-      id: key,
-      name: typeof entries[0]?.name === "string" ? entries[0].name.slice(0, 40) : "Guest",
-    }));
-    options.onParticipants?.(people);
+    const peers = new Set(Object.keys(channel.presenceState()));
+    if (awareness) {
+      const departed = [...previousPeers].filter((key) => key !== id && !peers.has(key)).map(Number);
+      removeAwarenessStates(awareness, departed, "remote");
+    }
+    previousPeers = peers;
+    publishParticipants();
+    broadcastAwareness();
   });
-
   const handleLocalUpdate = (update: Uint8Array, origin: unknown) => {
     if (origin === "remote" || !connected) return;
     void channel.send({
@@ -66,9 +110,15 @@ export function connectRoomToSupabase(
     if (disposed) return;
     connected = status === "SUBSCRIBED";
     options.onStatus?.(connected ? "connected" : "disconnected");
-    if (!connected) { options.onParticipants?.([]); return; }
+    if (!connected) {
+      participantSnapshot = "";
+      options.onParticipants?.([]);
+      if (awareness) removeAwarenessStates(awareness, [...awareness.getStates().keys()].filter((key) => key !== ydoc.clientID), "remote");
+      return;
+    }
     await channel.track({ name: `Guest ${id.slice(-4)}` });
     if (disposed) return;
+    broadcastAwareness();
     void channel.send({
       type: "broadcast", event: "yjs-sync-request",
       payload: { clientId: id, vector: Array.from(Y.encodeStateVector(ydoc)) },
@@ -81,6 +131,8 @@ export function connectRoomToSupabase(
   });
 
   return () => {
+    awareness?.setLocalState(null);
+    awareness?.off("update", handleAwareness);
     disposed = true;
     connected = false;
     ydoc.off("update", handleLocalUpdate);

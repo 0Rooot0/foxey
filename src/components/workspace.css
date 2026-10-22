@@ -108,3 +108,34 @@
   .room-chat { display: flex; flex-direction: column; flex: 1; min-height: 190px; }
   .chat-messages { height: auto; min-height: 55px; flex: 1; }
 }
+
+.live-avatar-stack { display: flex; align-items: center; padding-left: 7px; }
+.live-avatar-stack .student-avatar { margin-left: -7px; }
+.more-students { background: var(--surface-raised); border-radius: 50%; padding: 8px; font-size: 10px; }
+.edu-header .foxey-brand { font-size: 25px; }
+.edu-header .foxey-brand-icon { width: 36px; height: 36px; }
+.edu-header .foxey-brand small { font-size: 12px; border: 0; margin-left: 0; color: white; }
+.yRemoteSelectionHead { position: absolute; border-left: 2px solid; height: 100%; box-sizing: border-box; }
+.yRemoteSelectionHead::before { content: ""; position: absolute; left: -2px; top: -1px; border: 4px solid transparent; border-left-color: inherit; border-top-color: inherit; }
+.yRemoteSelectionHead::after { position: absolute; top: 15px; left: -2px; padding: 3px 7px; border-radius: 0 4px 4px 4px; font: 11px/1.5 Arial, sans-serif; white-space: nowrap; color: #09111d; font-weight: 700; z-index: 10; pointer-events: none; }
+
+:root[data-theme="dark"] .edu {
+  --background: #101b27; --surface: #192633; --surface-raised: #233446;
+  --border: #314252; --blue-soft: #17476c; --blue: #80caff; --muted: #aebed0;
+}
+.edu-header { background: linear-gradient(110deg, var(--surface), var(--background)); }
+.edu-header-actions .live-avatar-stack { order: -1; margin-right: 8px; }
+.edu-nav { padding: 15px 10px; }
+.edu-nav > a, .edu-nav > button { border-radius: 6px; }
+.edu-run { background: #00a979; border-color: #00ad7c; }
+.edu-toolbar { background: var(--surface); }
+.edu-toolbar > div:first-child { align-self: stretch; border-bottom: 2px solid #279ed8; padding: 8px 10px; }
+.edu-room-list { padding: 22px 0 0; font-size: 11px; }
+.edu-room-list > p { font-size: 9px; color: var(--muted); padding: 0 12px; margin-bottom: 9px; letter-spacing: 1px; }
+.edu-room-list > a { display: flex; gap: 8px; align-items: center; padding: 11px 12px; color: var(--muted); text-decoration: none; border-radius: 6px; overflow-wrap: anywhere; }
+.edu-room-list .current-room { background: var(--blue-soft); color: var(--blue); }
+.edu-room-list i { width: 8px; height: 8px; border-radius: 50%; background: #28b4f6; flex-shrink: 0; }
+.edu-settings label { font-size: 11px; color: var(--muted); }
+.edu-settings input { width: 100%; min-width: 0; background: var(--background); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--foreground); margin: 8px 0; font-size: 11px; }
+@media (max-width: 600px) { .edu-room-list { display: none; }.edu-header-actions .live-avatar-stack { margin: 0; }.edu-toolbar > div:first-child { padding: 4px; } }
+.edu-brand > .foxey-brand { color: var(--foreground); }
