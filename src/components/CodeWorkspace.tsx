@@ -83,6 +83,11 @@ export default function CodeWorkspace({
   useEffect(() => {
     if (!roomId) return;
 
+    try {
+      const previous = JSON.parse(localStorage.getItem("foxey-recent-rooms") || "[]");
+      const rooms = Array.isArray(previous) ? previous.filter((room) => typeof room?.id === "string" && typeof room?.name === "string" && room.id !== roomId) : [];
+      localStorage.setItem("foxey-recent-rooms", JSON.stringify([{ id: roomId, name: roomName || `Room ${roomId}` }, ...rooms].slice(0, 30)));
+    } catch {}
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
     const awareness = new Awareness(ydoc);
@@ -135,7 +140,7 @@ export default function CodeWorkspace({
       ydocRef.current = null;
       sharedOutputRef.current = null;
     };
-  }, [roomId]);
+  }, [roomId, roomName]);
 
   function updateOutput(value: string) {
     setOutput(value);
@@ -217,7 +222,7 @@ export default function CodeWorkspace({
         <nav className="edu-nav" aria-label="Classroom navigation">
           <p>YOUR WORKSPACE</p>
           <a className="active" href="#code-editor" aria-current="page"><span>⌘</span> Classroom</a>
-          <Link href="/#classroom"><span>▦</span> Rooms</Link>
+          <Link href="/rooms"><span>▦</span> Rooms</Link>
           <button disabled title="Assignments are not available yet"><span>▤</span> Assignments <small>Soon</small></button>
           <button disabled title="Progress tracking is not available yet"><span>↗</span> Progress <small>Soon</small></button>
           <button onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="workspace-settings"><span>⚙</span> Settings</button>
@@ -233,7 +238,7 @@ export default function CodeWorkspace({
               <input id="student-name" name="name" maxLength={40} required placeholder="e.g. Ava" defaultValue={participants.find((person) => person.id === selfId)?.name} />
               <button className="edu-button" type="submit">Update name</button>
             </form>}</div>}
-          <div className="edu-room-list"><p>ROOMS</p><a href="#code-editor" className="current-room"><i />{roomName || "Current session"}</a><Link href="/#classroom">+ Create or join a room</Link></div>
+          <div className="edu-room-list"><p>ROOMS</p><a href="#code-editor" className="current-room"><i />{roomName || "Current session"}</a><Link href="/rooms">+ Create or join a room</Link></div>
           <div className="edu-nav-bottom"><span className="edu-brand-accent">A little curiosity.</span><p>A lot of possibility.</p><small>Foxey Labs</small></div>
         </nav>
         <section className="edu-center" aria-label="Coding workspace">
