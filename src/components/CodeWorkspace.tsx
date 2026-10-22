@@ -7,7 +7,8 @@ import { ThemeToggle, useTheme } from "@/components/ThemeProvider";
 import "./workspace.css";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
-import { connectRoomToSupabase } from "@/lib/collaboration/roomSync";
+import { connectRoomToSupabase, type Participant, type ConnectionStatus } from "@/lib/collaboration/roomSync";
+import RoomPanel, { type ChatMessage } from "@/components/RoomPanel";
 import {
   cancelJavaScript,
   runJavaScript,
@@ -41,6 +42,11 @@ export default function CodeWorkspace({
     useRef<import("y-monaco").MonacoBinding | null>(null);
 
   const sharedOutputRef = useRef<Y.Text | null>(null);
+  const chatRef = useRef<Y.Array<ChatMessage> | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [selfId, setSelfId] = useState<string>();
 
   const [code, setCode] = useState({
     python: "# Start coding with Foxey",
@@ -88,14 +94,26 @@ export default function CodeWorkspace({
     };
 
     sharedOutput.observe(handleSharedOutput);
+    const chat = ydoc.getArray<ChatMessage>("room-chat");
+    chatRef.current = chat;
+    const handleChat = () => setMessages(chat.toArray().filter((message) =>
+      message && typeof message.id === "string" && typeof message.author === "string" && typeof message.text === "string"
+    ).slice(-100));
+    chat.observe(handleChat);
 
     const disconnect = connectRoomToSupabase(
       roomId,
-      ydoc
+      ydoc,
+      {
+        onParticipants: (people) => { setParticipants(people); setSelfId(String(ydoc.clientID)); },
+        onStatus: setConnectionStatus,
+      }
     );
 
     return () => {
       sharedOutput.unobserve(handleSharedOutput);
+      chat.unobserve(handleChat);
+      chatRef.current = null;
 
       bindingRef.current?.destroy();
       disconnect();
@@ -122,6 +140,12 @@ export default function CodeWorkspace({
     });
   }
 
+  function sendMessage(text: string) {
+    const doc = ydocRef.current;
+    if (!doc || !chatRef.current || connectionStatus !== "connected") return;
+    chatRef.current.push([{ id: crypto.randomUUID(), author: `Guest ${String(doc.clientID).slice(-4)}`, text: text.slice(0, 1000) }]);
+  }
+
   async function handleRun() {
     setIsRunning(true);
     updateOutput("Running...");
@@ -138,6 +162,8 @@ export default function CodeWorkspace({
         updateOutput(result);
         return;
       }
+    } catch (error) {
+      updateOutput(error instanceof Error ? error.message : "Execution failed.");
     } finally {
       setIsRunning(false);
     }
@@ -182,7 +208,7 @@ export default function CodeWorkspace({
           <div className="edu-toolbar">
             <div><span className="file-dot" /> <strong>{language === "python" ? "main.py" : "main.js"}</strong><span className="edu-toolbar-label">{roomId ? "Shared editor" : "Personal editor"}</span></div>
             <div className="edu-run-actions">
-              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => setLanguage(event.target.value as Language)}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
+              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { bindingRef.current?.destroy(); bindingRef.current = null; setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
               <button className="edu-button edu-run" onClick={handleRun} disabled={isRunning}>{isRunning ? "Running…" : "▶ Run code"}</button>
               {isRunning && <button className="edu-button" onClick={handleCancel}>Cancel</button>}
             </div>
@@ -193,7 +219,17 @@ export default function CodeWorkspace({
               height="100%"
               language={language}
               value={code[language]}
-              theme={theme === "dark" ? "vs-dark" : "light"}
+              theme={theme === "dark" ? "foxey-dark" : "foxey-light"}
+              beforeMount={(monaco) => {
+                monaco.editor.defineTheme("foxey-dark", {
+                  base: "vs-dark", inherit: true, rules: [],
+                  colors: { "editor.background": "#0a1120", "editor.lineHighlightBackground": "#111d30", "editorLineNumber.foreground": "#61728e", "editor.selectionBackground": "#254b80" },
+                });
+                monaco.editor.defineTheme("foxey-light", {
+                  base: "vs", inherit: true, rules: [],
+                  colors: { "editor.background": "#ffffff", "editor.lineHighlightBackground": "#f3f6fc", "editorLineNumber.foreground": "#8190a8" },
+                });
+              }}
               options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true }}
               onMount={async (editorInstance) => {
                 editorRef.current = editorInstance;
@@ -232,12 +268,11 @@ export default function CodeWorkspace({
           </section>
           <footer className="edu-status"><span>{roomId ? "Room workspace" : "Personal workspace"}</span><span>{language === "python" ? "Python" : "JavaScript"} · UTF-8</span></footer>
         </section>
-        <aside className="edu-social" aria-label="Room collaboration">
-          <h2>Participants</h2><p className="edu-empty">{roomId ? "Your room’s collaboration panel." : "You’re in a personal workspace. Create a room to code with others."}</p>
-          <Link href="/#classroom" className="edu-button">Browse rooms →</Link>
-        </aside>
+        <RoomPanel roomId={roomId} status={connectionStatus} participants={participants} messages={messages} selfId={selfId} onSend={sendMessage} />
       </div>
     </main>
   );
 }
+
+
 

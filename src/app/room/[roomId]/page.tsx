@@ -15,5 +15,5 @@ export default async function RoomPage({
 
   const query = await searchParams;
   const roomName = typeof query.name === "string" ? query.name.trim().slice(0, 80) : undefined;
-  return <CodeWorkspace roomId={roomId} roomName={roomName} />;
+  return <CodeWorkspace key={roomId} roomId={roomId} roomName={roomName} />;
 }
