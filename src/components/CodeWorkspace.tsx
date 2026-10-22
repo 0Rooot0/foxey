@@ -58,6 +58,8 @@ export default function CodeWorkspace({
 
   const bindingRef =
     useRef<import("y-monaco").MonacoBinding | null>(null);
+  const bindingGenerationRef = useRef(0);
+  const [bindingReady, setBindingReady] = useState(false);
 
   const sharedOutputRef = useRef<Y.Text | null>(null);
   const chatRef = useRef<Y.Array<ChatMessage> | null>(null);
@@ -99,6 +101,7 @@ export default function CodeWorkspace({
 
   useEffect(() => {
     if (!roomId) return;
+    const bindingGeneration = bindingGenerationRef;
 
     try {
       const previous = JSON.parse(localStorage.getItem("foxey-recent-rooms") || "[]");
@@ -164,7 +167,10 @@ export default function CodeWorkspace({
       chat.unobserve(handleChat);
       chatRef.current = null;
 
+      bindingGeneration.current++;
       bindingRef.current?.destroy();
+      bindingRef.current = null;
+      editorRef.current = null;
       disconnect();
       awareness.destroy();
       awarenessRef.current = null;
@@ -210,18 +216,19 @@ export default function CodeWorkspace({
   }
 
   async function handleRun() {
+    const source = roomId ? ydocRef.current?.getText(`code:${language}`).toString() ?? "" : code[language];
     setIsRunning(true);
     updateOutput("Running...");
 
     try {
       if (language === "javascript") {
-        const result = await runJavaScript(code.javascript);
+        const result = await runJavaScript(source);
         updateOutput(result);
         return;
       }
 
       if (language === "python") {
-        const result = await runPython(code.python);
+        const result = await runPython(source);
         updateOutput(result);
         return;
       }
@@ -260,7 +267,6 @@ export default function CodeWorkspace({
       <style>{participants.filter((person) => /^\d+$/.test(person.id)).map((person) => `
         .yRemoteSelection-${person.id} { background: ${person.color.replace(")", " / .2)")}; }
         .yRemoteSelectionHead-${person.id} { border-color: ${person.color}; }
-        .yRemoteSelectionHead-${person.id}::after { color: ${person.color}; content: ${JSON.stringify(person.name.slice(0, 16))}; }
       `).join("\n")}</style>
       <a className="edu-skip" href="#code-editor">Skip to editor</a>
       <header className="edu-header">
@@ -304,7 +310,7 @@ export default function CodeWorkspace({
           <div className="edu-toolbar">
             <div><span className="file-dot" /> <strong>{language === "python" ? "main.py" : "main.js"}</strong><span className="edu-toolbar-label">{roomId ? "Shared editor" : "Personal editor"}</span></div>
             <div className="edu-run-actions">
-              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { bindingRef.current?.destroy(); bindingRef.current = null; awarenessRef.current?.setLocalStateField("selection", null); setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
+              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { bindingGenerationRef.current++; bindingRef.current?.destroy(); bindingRef.current = null; editorRef.current = null; setBindingReady(false); awarenessRef.current?.setLocalStateField("selection", null); setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
               <button className="edu-button edu-run" onClick={handleRun} disabled={isRunning}>{isRunning ? "Running…" : "▶ Run code"}</button>
               {isRunning && <button className="edu-button" onClick={handleCancel}>Cancel</button>}
             </div>
@@ -314,7 +320,7 @@ export default function CodeWorkspace({
               key={language}
               height="100%"
               language={language}
-              value={code[language]}
+              value={roomId ? undefined : code[language]}
               theme={theme === "dark" ? "foxey-dark" : "foxey-light"}
               beforeMount={(monaco) => {
                 monaco.editor.defineTheme("foxey-dark", {
@@ -326,32 +332,24 @@ export default function CodeWorkspace({
                   colors: { "editor.background": "#ffffff", "editor.lineHighlightBackground": "#f3f6fc", "editorLineNumber.foreground": "#8190a8" },
                 });
               }}
-              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true }}
+              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true, readOnly: Boolean(roomId && !bindingReady) }}
               onMount={async (editorInstance) => {
                 editorRef.current = editorInstance;
+                if (!roomId || !ydocRef.current) return;
 
-                if (!roomId || !ydocRef.current) {
-                  return;
-                }
-
+                const generation = ++bindingGenerationRef.current;
+                const doc = ydocRef.current;
+                const model = editorInstance.getModel();
                 bindingRef.current?.destroy();
+                bindingRef.current = null;
+                if (!model) return;
 
-                const ytext = ydocRef.current.getText(
-                  `code:${language}`
-                );
-
-                const { MonacoBinding } =
-                  await import("y-monaco");
-
-                if (editorRef.current !== editorInstance || editorInstance.getModel()?.isDisposed()) return;
-                bindingRef.current = new MonacoBinding(
-                  ytext,
-                  editorInstance.getModel()!,
-                  new Set([editorInstance]),
-                  awarenessRef.current
-                );
+                const { MonacoBinding } = await import("y-monaco");
+                if (generation !== bindingGenerationRef.current || editorRef.current !== editorInstance || ydocRef.current !== doc || editorInstance.getModel() !== model || model.isDisposed()) return;
+                bindingRef.current = new MonacoBinding(doc.getText(`code:${language}`), model, new Set([editorInstance]), awarenessRef.current);
+                setBindingReady(true);
               }}
-              onChange={(value) =>
+              onChange={roomId ? undefined : (value) =>
                 setCode((previousCode) => ({
                   ...previousCode,
                   [language]: value ?? "",
