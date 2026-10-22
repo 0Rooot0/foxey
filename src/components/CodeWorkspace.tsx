@@ -273,6 +273,3 @@ export default function CodeWorkspace({
     </main>
   );
 }
-
-
-

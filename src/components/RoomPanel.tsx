@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ConnectionStatus, Participant } from "@/lib/collaboration/roomSync";
 
@@ -17,6 +17,11 @@ type Props = {
 
 export default function RoomPanel({ roomId, status, participants, messages, selfId, onSend }: Props) {
   const [draft, setDraft] = useState("");
+  const messageListRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = messageListRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages]);
   return (
     <aside className="edu-social" aria-label="Room collaboration">
       <div className="participant-heading"><h2>Participants</h2><span>{roomId ? participants.length : 1}</span></div>
@@ -25,7 +30,7 @@ export default function RoomPanel({ roomId, status, participants, messages, self
       <div className="room-tip">{roomId ? "Share your invite link to bring someone into this room." : <><p>Create a room to code and chat together.</p><Link className="edu-button" href="/#classroom">Create a room →</Link></>}</div>
       <section className="room-chat" aria-labelledby="chat-heading">
         <h2 id="chat-heading">Room chat <span>↗</span></h2>
-        <div className="chat-messages" role="log" aria-label="Room messages" aria-live="polite">
+        <div ref={messageListRef} className="chat-messages" role="log" aria-label="Room messages" aria-live="polite">
           {messages.length === 0 ? <p className="edu-empty">{roomId ? "A place for questions, ideas, and little breakthroughs. Say hello." : "Chat is available in shared rooms."}</p> : messages.map((message) => <article key={message.id}><strong>{message.author}</strong><p>{message.text}</p></article>)}
         </div>
         <form onSubmit={(event) => { event.preventDefault(); if (!draft.trim() || status !== "connected" || !roomId) return; onSend(draft.trim()); setDraft(""); }}>
