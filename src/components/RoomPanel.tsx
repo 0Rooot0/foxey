@@ -39,7 +39,7 @@ export default function RoomPanel({ roomId, status, participants, messages, self
           <input id="chat-message" placeholder="Message your room…" maxLength={1000} value={draft} disabled={!roomId || status !== "connected"} onChange={(event) => setDraft(event.target.value)} />
           <button className="edu-button edu-run" disabled={!roomId || status !== "connected" || !draft.trim()} aria-label="Send message">↑</button>
         </form>
-        <p className="chat-note">Live session chat · not saved after everyone leaves</p>
+        <p className="chat-note">Room chat · saved with your room</p>
       </section>
     </aside>
   );

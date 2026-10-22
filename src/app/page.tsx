@@ -70,7 +70,7 @@ export default function Home() {
       </section>
 
       <section id="classroom" className="classroom-section">
-        <div><p className="eyebrow">One link. Your whole team.</p><h2>Make room for<br />your next idea.</h2><p>Create a named coding room and share the invite. Everyone gets their own avatar and live cursor, with the same code and output.</p><p className="session-note">Rooms are live sessions. Keep a copy of your code before everyone leaves.</p></div>
+        <div><p className="eyebrow">One link. Your whole team.</p><h2>Make room for<br />your next idea.</h2><p>Create a named coding room and share the invite. Everyone gets their own avatar and live cursor, with the same code and output.</p><p className="session-note">Room code and output are saved automatically. Check the save status before leaving.</p></div>
         <div className="room-card">
           <h3>Join a coding room</h3><p>Enter a room ID or start a new session.</p>
           <form onSubmit={handleJoinRoom}><label htmlFor="room-id">Room ID</label><div className="input-row"><input id="room-id" required value={roomId} onChange={(event) => setRoomId(event.target.value)} placeholder="Enter room ID" /><button className="button" disabled={!roomId.trim()}>Join →</button></div></form>

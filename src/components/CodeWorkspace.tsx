@@ -7,6 +7,9 @@ import { ThemeToggle, useTheme } from "@/components/ThemeProvider";
 import "./workspace.css";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
+import { persistRoom, type SaveStatus } from "@/lib/collaboration/roomPersistence";
+import { supabaseRoomStore } from "@/lib/collaboration/supabaseRoomStore";
+import { supabase } from "@/lib/supabase/client";
 import { Awareness } from "y-protocols/awareness";
 import StudentAvatar from "./StudentAvatar";
 import FoxeyBrand from "./FoxeyBrand";
@@ -33,6 +36,7 @@ export default function CodeWorkspace({
   roomName,
 }: CodeWorkspaceProps) {
   const { theme } = useTheme();
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("loading");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [language, setLanguage] = useState<Language>("python");
 
@@ -115,6 +119,14 @@ export default function CodeWorkspace({
     ).slice(-100));
     chat.observe(handleChat);
 
+    const persistence = persistRoom(ydoc, supabaseRoomStore(supabase, roomId), {
+      onStatus: setSaveStatus,
+      readLocal: () => JSON.parse(localStorage.getItem(`foxey-room:${roomId}`) || "null"),
+      writeLocal: (state) => localStorage.setItem(`foxey-room:${roomId}`, JSON.stringify(state)),
+    });
+    const handlePageHide = () => { void persistence.flush(); };
+    window.addEventListener("pagehide", handlePageHide);
+
     const disconnect = connectRoomToSupabase(
       roomId,
       ydoc,
@@ -126,6 +138,8 @@ export default function CodeWorkspace({
     );
 
     return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+      void persistence.stop();
       sharedOutput.unobserve(handleSharedOutput);
       chat.unobserve(handleChat);
       chatRef.current = null;
@@ -304,7 +318,7 @@ export default function CodeWorkspace({
             <div className="edu-output-header"><h2 id="output-heading">Output</h2><span>{isRunning ? "Running…" : "Ready"} · {roomId ? "Shared with room" : "Only you"}</span></div>
             <pre aria-live="polite" aria-atomic="true">{output}</pre>
           </section>
-          <footer className="edu-status"><span>{roomId ? "Room workspace" : "Personal workspace"}</span><span>{language === "python" ? "Python" : "JavaScript"} · UTF-8</span></footer>
+          <footer className="edu-status"><span role="status">{roomId ? ({ loading: "Loading saved room…", saving: "Saving…", saved: "Saved", error: "Cloud save unavailable — keep a copy of your code" })[saveStatus] : "Personal workspace"}</span><span>{language === "python" ? "Python" : "JavaScript"} · UTF-8</span></footer>
         </section>
         <RoomPanel roomId={roomId} status={connectionStatus} participants={participants} messages={messages} selfId={selfId} onSend={sendMessage} />
       </div>
