@@ -51,6 +51,7 @@ workerScope.onmessage = async (
 
   try {
     const pyodide = await getPyodide();
+    workerScope.postMessage({ type: "ready" });
 
     pyodide.setStdout({
       batched: (text) => output.push(text),

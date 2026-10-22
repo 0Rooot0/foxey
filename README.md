@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Validation
+
+Use Node.js 24 or newer for the built-in TypeScript test support.
+
+- `npm run lint` checks source quality.
+- `npm test` covers Python runtime startup, execution timeout, cancellation, reuse, and failure recovery.
+- `npm run build` checks types and produces the production build.
+
+To check collaboration, open the same room in two browser tabs. Verify edits in each language, shared runner output, participant presence, and chat. Reload one tab while the other remains open to check late-join synchronization. Room content and chat are held by connected peers; this does not provide durable room storage.
+
+Assignments and progress tracking are not implemented yet and are labeled as unavailable in the EDU navigation.

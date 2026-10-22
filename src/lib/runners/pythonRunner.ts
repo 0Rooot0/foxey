@@ -1,4 +1,5 @@
 const PYTHON_TIMEOUT_MS = 5000;
+const PYTHON_STARTUP_TIMEOUT_MS = 30000;
 
 let pythonWorker: Worker | null = null;
 let cancelActiveRun: (() => void) | null = null;
@@ -54,10 +55,19 @@ export function runPython(code: string): Promise<string> {
 
     timeout = setTimeout(() => {
       resetPythonWorker();
-      finish("Execution timed out.");
-    }, PYTHON_TIMEOUT_MS);
+      finish("Python could not load in time. Check your connection and try again.");
+    }, PYTHON_STARTUP_TIMEOUT_MS);
 
     worker.onmessage = (event) => {
+      if (event.data.type === "ready") {
+        if (timeout) clearTimeout(timeout);
+        // Runtime download time should not consume the student's execution budget.
+        timeout = setTimeout(() => {
+          resetPythonWorker();
+          finish("Execution timed out.");
+        }, PYTHON_TIMEOUT_MS);
+        return;
+      }
       finish(
         event.data.output ||
           "Code finished with no output."
