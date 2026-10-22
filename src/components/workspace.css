@@ -1,0 +1,77 @@
+.edu { min-height: 100dvh; background: var(--background); color: var(--foreground); font-size: 13px; }
+.edu-skip { position: absolute; top: -100px; z-index: 20; padding: 12px; background: var(--surface); }
+.edu-skip:focus { top: 0; }
+.edu-header { min-height: 80px; display: flex; align-items: center; gap: 28px; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.edu-brand { display: flex; align-items: center; font-size: 27px; font-weight: 750; letter-spacing: -1px; text-decoration: none; }
+.edu-brand > span { color: var(--accent); }
+.edu-brand small { margin-left: 10px; font-size: 10px; letter-spacing: 1px; border: 1px solid var(--border); padding: 3px 5px; border-radius: 5px; color: var(--muted); }
+.edu-room { border-left: 1px solid var(--border); padding-left: 28px; min-width: 0; }
+.edu-room > span { color: var(--muted); letter-spacing: 1.5px; font-size: 9px; }
+.edu-room h1 { font-size: 13px; font-weight: 550; margin: 4px 0 0; overflow-wrap: anywhere; }
+.edu-header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0; }
+.edu-avatar { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font-weight: 600; flex-shrink: 0; }
+.edu-button { display: inline-flex; align-items: center; justify-content: center; padding: 9px 13px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--foreground); font-size: 12px; font-weight: 550; text-decoration: none; }
+.edu-button:hover { border-color: var(--blue); }
+.edu-run { background: #386de8; color: white; border-color: #386de8; }
+.edu-layout { display: grid; grid-template-columns: 190px minmax(0, 1fr) 260px; min-height: calc(100dvh - 81px); }
+.edu-nav { display: flex; flex-direction: column; gap: 7px; padding: 24px 14px; border-right: 1px solid var(--border); background: var(--surface); }
+.edu-nav > p { font-size: 9px; letter-spacing: 1.3px; color: var(--muted); margin: 0 12px 15px; }
+.edu-nav > a, .edu-nav > button { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); text-align: left; text-decoration: none; font-size: 12px; }
+.edu-nav > a.active { background: var(--blue-soft); color: var(--blue); }
+.edu-nav > a:hover, .edu-nav > button:not(:disabled):hover { background: var(--surface-raised); }
+.edu-nav > button small { font-size: 8px; margin-left: auto; }
+.edu-nav-bottom { margin-top: auto; padding: 60px 12px 0; }
+.edu-brand-accent { color: var(--accent); font-size: 11px; }
+.edu-nav-bottom p { color: var(--muted); font-size: 11px; margin: 5px 0 20px; }
+.edu-nav-bottom small { font-size: 10px; color: var(--muted); }
+.edu-settings { padding: 10px; }
+.edu-settings p { color: var(--muted); font-size: 11px; line-height: 1.6; }
+.edu-center { display: flex; flex-direction: column; min-width: 0; }
+.edu-toolbar { min-height: 63px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.edu-toolbar > div { display: flex; align-items: center; gap: 10px; }
+.edu-toolbar strong { font-size: 12px; font-weight: 500; }
+.file-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+.edu-toolbar-label { color: var(--muted); font-size: 10px; }
+.edu-run-actions select { max-width: 110px; font-size: 11px; background: var(--surface); color: var(--muted); border: 0; }
+.edu-editor { height: max(360px, calc(100dvh - 383px)); min-width: 0; }
+.edu-output { min-height: 210px; border-top: 1px solid var(--border); background: var(--surface); }
+.edu-output-header { display: flex; justify-content: space-between; align-items: center; padding: 13px 20px; border-bottom: 1px solid var(--border); }
+.edu-output h2 { font-size: 12px; font-weight: 550; margin: 0; }
+.edu-output-header > span { color: var(--muted); font-size: 10px; }
+.edu-output pre { font-size: 12px; line-height: 1.8; padding: 18px 20px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 250px; overflow-y: auto; }
+.edu-status { display: flex; justify-content: space-between; padding: 8px 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 10px; }
+.edu-social { border-left: 1px solid var(--border); background: var(--surface); padding: 22px 18px; min-width: 0; }
+.edu-social h2 { font-size: 13px; font-weight: 600; margin: 0 0 20px; }
+.edu-empty { font-size: 12px; color: var(--muted); line-height: 1.8; }
+.invite-status { padding: 10px 24px; background: var(--blue-soft); color: var(--blue); overflow-wrap: anywhere; }
+.invite-status input { display: block; width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--foreground); padding: 8px; margin-top: 8px; }
+@media (max-width: 1150px) {
+  .edu-layout { grid-template-columns: 160px minmax(0, 1fr) 220px; }
+  .edu-toolbar { flex-wrap: wrap; gap: 12px; }
+  .edu-toolbar-label { display: none; }
+}
+@media (max-width: 900px) {
+  .edu-layout { grid-template-columns: 150px minmax(0, 1fr); }
+  .edu-social { grid-column: 2; border-top: 1px solid var(--border); border-left: 0; }
+  .edu-nav { grid-row: span 2; }
+  .edu-header { flex-wrap: wrap; gap: 14px; }
+  .edu-header-actions { gap: 8px; }
+  .edu-editor { height: 430px; }
+}
+@media (max-width: 600px) {
+  .edu-header { padding: 14px; }
+  .edu-room { border: 0; padding: 0; order: 3; width: 100%; }
+  .edu-header-actions { flex-wrap: wrap; }
+  .edu-header-actions .edu-avatar { display: none; }
+  .edu-layout { display: flex; flex-direction: column; }
+  .edu-nav { flex-direction: row; flex-wrap: wrap; padding: 8px; border-right: 0; border-bottom: 1px solid var(--border); gap: 2px; }
+  .edu-nav > p, .edu-nav-bottom { display: none; }
+  .edu-nav > a, .edu-nav > button { font-size: 11px; padding: 8px; gap: 5px; }
+  .edu-nav > button small { display: none; }
+  .edu-settings { width: 100%; }
+  .edu-toolbar { padding: 12px; }
+  .edu-run-actions { flex-wrap: wrap; }
+  .edu-editor { height: 390px; }
+  .edu-output-header { padding: 12px; }
+  .edu-social { border-left: 0; border-top: 1px solid var(--border); }
+}

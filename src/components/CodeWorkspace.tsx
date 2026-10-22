@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
+import Link from "next/link";
+import { ThemeToggle, useTheme } from "@/components/ThemeProvider";
+import "./workspace.css";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
 import { connectRoomToSupabase } from "@/lib/collaboration/roomSync";
@@ -25,6 +28,8 @@ export default function CodeWorkspace({
   roomId,
   roomName,
 }: CodeWorkspaceProps) {
+  const { theme } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [language, setLanguage] = useState<Language>("python");
 
   const editorRef =
@@ -150,74 +155,46 @@ export default function CodeWorkspace({
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 px-6 py-4">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Foxey Workspace
-          </h1>
-
-          <p className="text-sm text-zinc-400">
-            {roomName || (roomId ? `Room ${roomId}` : "Untitled session")}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {roomId && (
-            <div className="flex flex-col gap-1">
-              <button onClick={copyInviteLink} className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium">Copy invite link</button>
-              <span role="status" className="text-xs text-zinc-400">{inviteStatus}</span>
-              {manualInvite && <input aria-label="Invite link" readOnly value={manualInvite} onFocus={(event) => event.target.select()} className="rounded border border-zinc-700 bg-zinc-900 p-2 text-sm" />}
-            </div>
-          )}
-          <select
-            value={language}
-            onChange={(event) =>
-              setLanguage(event.target.value as Language)
-            }
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
-          >
-            <option value="python">
-              Python
-            </option>
-
-            <option value="javascript">
-              JavaScript
-            </option>
-          </select>
-
-          <button
-            onClick={handleRun}
-            disabled={isRunning}
-            className="cursor-pointer rounded-md bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isRunning ? "Running..." : "Run"}
-          </button>
-
-          {isRunning && (
-            <button
-              onClick={handleCancel}
-              className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium text-white"
-            >
-              Cancel
-            </button>
-          )}
+    <main className="edu">
+      <a className="edu-skip" href="#code-editor">Skip to editor</a>
+      <header className="edu-header">
+        <Link href="/" className="edu-brand">Foxey<span>.</span><small>EDU</small></Link>
+        <div className="edu-room"><span>WORKSPACE</span><h1>{roomName || (roomId ? `Room ${roomId}` : "Personal workspace")}</h1></div>
+        <div className="edu-header-actions">
+          <ThemeToggle />
+          {roomId && <button className="edu-button" onClick={copyInviteLink}>Invite people ↗</button>}
+          <span className="edu-avatar" aria-label="You">Y</span>
         </div>
       </header>
-
-      <section className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[2fr_1fr]">
-        <div className="border-b border-zinc-800 p-6 lg:border-b-0 lg:border-r">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
-            Editor
-          </h2>
-
-          <div className="h-[500px] overflow-hidden rounded-lg border border-zinc-800">
+      {inviteStatus && <div role="status" className="invite-status">{inviteStatus}{manualInvite && <input aria-label="Invite link" readOnly value={manualInvite} onFocus={(event) => event.target.select()} />}</div>}
+      <div className="edu-layout">
+        <nav className="edu-nav" aria-label="Classroom navigation">
+          <p>YOUR WORKSPACE</p>
+          <a className="active" href="#code-editor" aria-current="page"><span>⌘</span> Classroom</a>
+          <Link href="/#classroom"><span>▦</span> Rooms</Link>
+          <button disabled title="Assignments are not available yet"><span>▤</span> Assignments <small>Soon</small></button>
+          <button disabled title="Progress tracking is not available yet"><span>↗</span> Progress <small>Soon</small></button>
+          <button onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="workspace-settings"><span>⚙</span> Settings</button>
+          {settingsOpen && <div id="workspace-settings" className="edu-settings"><p>Appearance</p><ThemeToggle /><p>Theme applies to your workspace and editor.</p></div>}
+          <div className="edu-nav-bottom"><span className="edu-brand-accent">A little curiosity.</span><p>A lot of possibility.</p><small>Foxey Labs</small></div>
+        </nav>
+        <section className="edu-center" aria-label="Coding workspace">
+          <div className="edu-toolbar">
+            <div><span className="file-dot" /> <strong>{language === "python" ? "main.py" : "main.js"}</strong><span className="edu-toolbar-label">{roomId ? "Shared editor" : "Personal editor"}</span></div>
+            <div className="edu-run-actions">
+              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => setLanguage(event.target.value as Language)}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
+              <button className="edu-button edu-run" onClick={handleRun} disabled={isRunning}>{isRunning ? "Running…" : "▶ Run code"}</button>
+              {isRunning && <button className="edu-button" onClick={handleCancel}>Cancel</button>}
+            </div>
+          </div>
+          <div id="code-editor" className="edu-editor" tabIndex={-1}>
             <Editor
               key={language}
               height="100%"
               language={language}
               value={code[language]}
-              theme="vs-dark"
+              theme={theme === "dark" ? "vs-dark" : "light"}
+              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true }}
               onMount={async (editorInstance) => {
                 editorRef.current = editorInstance;
 
@@ -234,6 +211,7 @@ export default function CodeWorkspace({
                 const { MonacoBinding } =
                   await import("y-monaco");
 
+                if (editorRef.current !== editorInstance || editorInstance.getModel()?.isDisposed()) return;
                 bindingRef.current = new MonacoBinding(
                   ytext,
                   editorInstance.getModel()!,
@@ -248,18 +226,18 @@ export default function CodeWorkspace({
               }
             />
           </div>
-        </div>
-
-        <aside className="p-6">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
-            Output
-          </h2>
-
-          <div className="min-h-[250px] whitespace-pre-wrap rounded-lg border border-zinc-800 bg-black p-4 font-mono text-sm text-zinc-400">
-            {output}
-          </div>
+          <section className="edu-output" aria-labelledby="output-heading">
+            <div className="edu-output-header"><h2 id="output-heading">Output</h2><span>{isRunning ? "Running…" : "Ready"} · {roomId ? "Shared with room" : "Only you"}</span></div>
+            <pre aria-live="polite" aria-atomic="true">{output}</pre>
+          </section>
+          <footer className="edu-status"><span>{roomId ? "Room workspace" : "Personal workspace"}</span><span>{language === "python" ? "Python" : "JavaScript"} · UTF-8</span></footer>
+        </section>
+        <aside className="edu-social" aria-label="Room collaboration">
+          <h2>Participants</h2><p className="edu-empty">{roomId ? "Your room’s collaboration panel." : "You’re in a personal workspace. Create a room to code with others."}</p>
+          <Link href="/#classroom" className="edu-button">Browse rooms →</Link>
         </aside>
-      </section>
+      </div>
     </main>
   );
 }
+
