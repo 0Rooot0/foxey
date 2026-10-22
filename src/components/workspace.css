@@ -117,7 +117,7 @@
 .edu-header .foxey-brand small { font-size: 12px; border: 0; margin-left: 0; color: white; }
 .yRemoteSelectionHead { position: absolute; border-left: 2px solid; height: 100%; box-sizing: border-box; }
 .yRemoteSelectionHead::before { content: ""; position: absolute; left: -2px; top: -1px; border: 4px solid transparent; border-left-color: inherit; border-top-color: inherit; }
-.yRemoteSelectionHead::after { position: absolute; top: 15px; left: -2px; padding: 3px 7px; border-radius: 0 4px 4px 4px; font: 11px/1.5 Arial, sans-serif; white-space: nowrap; color: #09111d; font-weight: 700; z-index: 10; pointer-events: none; }
+.yRemoteSelectionHead::after { position: absolute; top: -18px; left: -2px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; padding: 1px 4px; font: 10px/1.4 Arial, sans-serif; white-space: nowrap; opacity: .55; z-index: 10; pointer-events: none; }
 
 :root[data-theme="dark"] .edu {
   --background: #101b27; --surface: #192633; --surface-raised: #233446;
@@ -139,3 +139,20 @@
 .edu-settings input { width: 100%; min-width: 0; background: var(--background); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--foreground); margin: 8px 0; font-size: 11px; }
 @media (max-width: 600px) { .edu-room-list { display: none; }.edu-header-actions .live-avatar-stack { margin: 0; }.edu-toolbar > div:first-child { padding: 4px; } }
 .edu-brand > .foxey-brand { color: var(--foreground); }
+.avatar-entry { display: grid; place-items: center; padding: 24px; }
+.avatar-entry-card { width: min(100%, 610px); padding: 28px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 16px 50px #0002; }
+.avatar-entry-eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.avatar-entry-card h1 { margin: 10px 0; font-size: 26px; }
+.avatar-entry-card p { color: var(--muted); line-height: 1.5; }
+.avatar-entry-card > label { display: block; margin: 24px 0 8px; font-weight: 600; }
+.avatar-entry-card > input { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); }
+.avatar-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 24px 0; }
+.avatar-option { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; padding: 10px 4px; border: 2px solid var(--border); border-radius: 10px; background: var(--surface-raised); color: var(--foreground); cursor: pointer; }
+.avatar-option:hover, .avatar-option.selected { border-color: var(--accent); }
+.avatar-option-label { font-size: 10px; text-align: center; }
+.avatar-entry-card > .edu-button { width: 100%; }
+.edu-settings .avatar-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 8px 0; }
+.edu-settings .avatar-option { padding: 5px 0; }
+.edu-settings .avatar-option-label { display: none; }
+.edu-settings .student-avatar { width: 32px !important; height: 32px !important; }
+@media (max-width: 480px) { .avatar-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } .avatar-entry-card { padding: 20px; } }

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import FoxeyBrand from "@/components/FoxeyBrand";
+import { supabase } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import "../home.css";
 
@@ -17,12 +18,33 @@ function readRooms() {
 type RecentRoom = { id: string; name: string };
 export default function RoomsPage() {
   const router = useRouter();
+  const [joinError, setJoinError] = useState("");
+  const [joiningRoom, setJoiningRoom] = useState(false);
   const stored = useSyncExternalStore(subscribe, readRooms, () => "[]");
   let rooms: RecentRoom[] = [];
   try {
     const value = JSON.parse(stored);
     if (Array.isArray(value)) rooms = value.filter((r) => typeof r?.id === "string" && typeof r?.name === "string");
   } catch {}
+
+  async function handleJoinRoom(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const id = String(new FormData(event.currentTarget).get("id") || "").trim();
+    if (!id || joiningRoom) return;
+    setJoinError("");
+    setJoiningRoom(true);
+    try {
+      const { data, error } = await supabase.from("room_states").select("room_id").eq("room_id", id).maybeSingle();
+      if (error) { setJoinError("Could not check the room. Please try again."); return; }
+      if (!data) { setJoinError("Room not found. Check the room ID or use an invite link."); return; }
+      router.push(`/room/${encodeURIComponent(id)}`);
+    } catch {
+      setJoinError("Could not check the room. Please try again.");
+    } finally {
+      setJoiningRoom(false);
+    }
+  }
+
   return <main className="home">
     <header className="home-header"><Link href="/" aria-label="Foxey home"><FoxeyBrand /></Link><ThemeToggle /></header>
     <section className="classroom-section">
@@ -31,11 +53,13 @@ export default function RoomsPage() {
         {!rooms.length && <p>Rooms you visit on this browser will appear here.</p>}
       </div>
       <div className="room-card"><h2>Join a coding room</h2>
-        <form onSubmit={(event) => { event.preventDefault(); const id = String(new FormData(event.currentTarget).get("id") || "").trim(); if (id) router.push(`/room/${encodeURIComponent(id)}`); }}>
-          <label htmlFor="room-id">Room ID</label><input id="room-id" name="id" required /><button className="button">Join →</button>
-        </form><div className="room-divider">or create a room</div>
+        <form onSubmit={handleJoinRoom}>
+          <label htmlFor="room-id">Room ID</label><input id="room-id" name="id" required onChange={() => setJoinError("")} /><button type="submit" className="button" disabled={joiningRoom}>{joiningRoom ? "Checking..." : "Join →"}</button>
+        </form>
+        {joinError && <p role="alert" className="room-error">{joinError}</p>}
+        <div className="room-divider">or create a room</div>
         <form onSubmit={(event) => { event.preventDefault(); const name = String(new FormData(event.currentTarget).get("name") || "").trim(); if (name) router.push(`/room/${crypto.randomUUID()}?name=${encodeURIComponent(name)}`); }}>
-          <label htmlFor="room-name">Room name</label><input id="room-name" name="name" required maxLength={80} /><button className="button button-primary">Create room</button>
+          <label htmlFor="room-name">Room name</label><input id="room-name" name="name" required maxLength={80} /><button type="submit" className="button button-primary">Create room</button>
         </form>
       </div>
     </section>

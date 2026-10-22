@@ -1,7 +1,10 @@
 import CodeWorkspace from "@/components/CodeWorkspace";
 
 type RoomPageProps = {
-  searchParams: Promise<{ name?: string | string[] }>;
+  searchParams: Promise<{
+    name?: string | string[];
+  }>;
+
   params: Promise<{
     roomId: string;
   }>;
@@ -14,6 +17,17 @@ export default async function RoomPage({
   const { roomId } = await params;
 
   const query = await searchParams;
-  const roomName = typeof query.name === "string" ? query.name.trim().slice(0, 80) : undefined;
-  return <CodeWorkspace key={roomId} roomId={roomId} roomName={roomName} />;
+
+  const roomName =
+    typeof query.name === "string"
+      ? query.name.trim().slice(0, 80)
+      : undefined;
+
+  return (
+    <CodeWorkspace
+      key={roomId}
+      roomId={roomId}
+      roomName={roomName}
+    />
+  );
 }

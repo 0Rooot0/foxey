@@ -12,6 +12,7 @@ import { supabaseRoomStore } from "@/lib/collaboration/supabaseRoomStore";
 import { supabase } from "@/lib/supabase/client";
 import { Awareness } from "y-protocols/awareness";
 import StudentAvatar from "./StudentAvatar";
+import { avatarOptions, participantAppearance } from "@/lib/collaboration/participants";
 import FoxeyBrand from "./FoxeyBrand";
 import { connectRoomToSupabase, type Participant, type ConnectionStatus } from "@/lib/collaboration/roomSync";
 import RoomPanel, { type ChatMessage } from "@/components/RoomPanel";
@@ -25,6 +26,15 @@ import {
 } from "@/lib/runners/pythonRunner";
 
 type Language = "python" | "javascript";
+
+function AvatarChoices({ selected, onSelect }: { selected: number; onSelect: (avatar: number) => void }) {
+  return <div className="avatar-choices" role="group" aria-label="Choose an avatar">
+    {avatarOptions.map((option, index) => <button key={option.label} type="button" className={selected === index ? "avatar-option selected" : "avatar-option"} aria-pressed={selected === index} aria-label={option.label} onClick={() => onSelect(index)}>
+      <StudentAvatar variant={index} name={option.label} size={42} color={selected === index ? "#ff7e2d" : "#7d91ae"} />
+      <span className="avatar-option-label">{option.label}</span>
+    </button>)}
+  </div>;
+}
 
 type CodeWorkspaceProps = {
   roomId?: string;
@@ -55,6 +65,9 @@ export default function CodeWorkspace({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selfId, setSelfId] = useState<string>();
+  const [avatarSetupOpen, setAvatarSetupOpen] = useState(Boolean(roomId));
+  const [selectedAvatar, setSelectedAvatar] = useState(0);
+  const [displayName, setDisplayName] = useState("");
 
   const [code, setCode] = useState({
     python: "# Start coding with Foxey",
@@ -98,7 +111,13 @@ export default function CodeWorkspace({
     awarenessRef.current = awareness;
     let name = `Guest ${String(ydoc.clientID).slice(-4)}`;
     try { name = localStorage.getItem("foxey-display-name")?.trim().slice(0, 40) || name; } catch {}
-    awareness.setLocalStateField("user", { name });
+    let avatar = participantAppearance(String(ydoc.clientID)).avatar;
+    try {
+      const saved = localStorage.getItem("foxey-avatar");
+      if (saved !== null && Number.isInteger(Number(saved)) && Number(saved) >= 0 && Number(saved) < avatarOptions.length) avatar = Number(saved);
+    } catch {}
+    const appearanceTimer = window.setTimeout(() => { setDisplayName(name); setSelectedAvatar(avatar); }, 0);
+    awareness.setLocalStateField("user", { name, avatar });
 
     const sharedOutput = ydoc.getText("shared-output");
     sharedOutputRef.current = sharedOutput;
@@ -138,6 +157,7 @@ export default function CodeWorkspace({
     );
 
     return () => {
+      window.clearTimeout(appearanceTimer);
       window.removeEventListener("pagehide", handlePageHide);
       void persistence.stop();
       sharedOutput.unobserve(handleSharedOutput);
@@ -155,6 +175,18 @@ export default function CodeWorkspace({
       sharedOutputRef.current = null;
     };
   }, [roomId, roomName]);
+
+  function updateAppearance(name: string, avatar: number) {
+    const cleanName = name.trim().slice(0, 40);
+    if (!cleanName) return;
+    awarenessRef.current?.setLocalStateField("user", { name: cleanName, avatar });
+    setDisplayName(cleanName);
+    setSelectedAvatar(avatar);
+    try {
+      localStorage.setItem("foxey-display-name", cleanName);
+      localStorage.setItem("foxey-avatar", String(avatar));
+    } catch {}
+  }
 
   function updateOutput(value: string) {
     setOutput(value);
@@ -211,12 +243,24 @@ export default function CodeWorkspace({
     }
   }
 
+  if (roomId && avatarSetupOpen) return <main className="edu avatar-entry">
+    <form className="avatar-entry-card" onSubmit={(event) => { event.preventDefault(); if (!displayName.trim()) return; updateAppearance(displayName, selectedAvatar); setAvatarSetupOpen(false); }}>
+      <span className="avatar-entry-eyebrow">{roomName || "Your coding room"}</span>
+      <h1>Choose your room avatar</h1>
+      <p>Pick a face for the room. Your classmates will see it beside your name.</p>
+      <label htmlFor="room-display-name">Your name</label>
+      <input id="room-display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={40} required autoFocus placeholder="e.g. Ava" />
+      <AvatarChoices selected={selectedAvatar} onSelect={setSelectedAvatar} />
+      <button className="edu-button edu-run" type="submit">Enter room →</button>
+    </form>
+  </main>;
+
   return (
     <main className="edu">
       <style>{participants.filter((person) => /^\d+$/.test(person.id)).map((person) => `
         .yRemoteSelection-${person.id} { background: ${person.color.replace(")", " / .2)")}; }
         .yRemoteSelectionHead-${person.id} { border-color: ${person.color}; }
-        .yRemoteSelectionHead-${person.id}::after { background: ${person.color}; content: ${JSON.stringify(person.name)}; }
+        .yRemoteSelectionHead-${person.id}::after { color: ${person.color}; content: ${JSON.stringify(person.name.slice(0, 16))}; }
       `).join("\n")}</style>
       <a className="edu-skip" href="#code-editor">Skip to editor</a>
       <header className="edu-header">
@@ -245,12 +289,13 @@ export default function CodeWorkspace({
               event.preventDefault();
               const name = String(new FormData(event.currentTarget).get("name") || "").trim().slice(0, 40);
               if (!name) return;
-              awarenessRef.current?.setLocalStateField("user", { name });
-              try { localStorage.setItem("foxey-display-name", name); } catch {}
+              updateAppearance(name, selectedAvatar);
             }}>
               <label htmlFor="student-name">Your display name</label>
               <input id="student-name" name="name" maxLength={40} required placeholder="e.g. Ava" defaultValue={participants.find((person) => person.id === selfId)?.name} />
               <button className="edu-button" type="submit">Update name</button>
+              <p>Your avatar</p>
+              <AvatarChoices selected={selectedAvatar} onSelect={(avatar) => updateAppearance(displayName, avatar)} />
             </form>}</div>}
           <div className="edu-room-list"><p>ROOMS</p><a href="#code-editor" className="current-room"><i />{roomName || "Current session"}</a><Link href="/rooms">+ Create or join a room</Link></div>
           <div className="edu-nav-bottom"><span className="edu-brand-accent">A little curiosity.</span><p>A lot of possibility.</p><small>Foxey Labs</small></div>

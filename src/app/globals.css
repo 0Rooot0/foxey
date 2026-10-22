@@ -63,3 +63,4 @@ a, button, select, input { -webkit-tap-highlight-color: transparent; }
 .foxey-brand small { font-size: 14px; letter-spacing: -.4px; color: #fff; background: #ff581a; border-radius: 6px; padding: 5px 7px; }
 .student-avatar { display: inline-flex; overflow: hidden; flex-shrink: 0; border: 2px solid var(--avatar-color); border-radius: 50%; background: #26364a; box-shadow: 0 0 0 2px #101c2a; vertical-align: middle; }
 .student-avatar svg { width: 100%; height: 100%; }
+.student-avatar-emoji { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.4em; line-height: 1; background: #e7eef7; }

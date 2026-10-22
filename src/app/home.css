@@ -79,6 +79,8 @@
 .classroom-section .session-note { font-size: 11px!important; }
 .room-card { border: 1px solid #7b91b540; border-radius: 16px; padding: 28px; background: var(--surface); }
 .room-card h3 { font-size: 20px; font-weight: 600; margin: 0; }.room-card p { font-size: 12px!important; margin: 8px 0 20px!important; }
+.classroom-section .room-card p.room-error { color: #c52222; font-size: 16px!important; font-weight: 600; }
+:root[data-theme="dark"] .classroom-section .room-card p.room-error { color: #ff7777; }
 .room-card label { display: block; font-size: 11px; margin-bottom: 8px; }
 .room-card input { min-width: 0; width: 100%; padding: 12px; background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
 .input-row { display: flex; gap: 8px; margin-top: 8px; }.room-divider { text-align: center; color: var(--home-muted); font-size: 10px; margin: 18px 0; }.full-width { width: 100%; justify-content: space-between; }

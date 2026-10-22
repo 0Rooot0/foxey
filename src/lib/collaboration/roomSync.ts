@@ -2,7 +2,7 @@ import * as Y from "yjs";
 import { supabase } from "@/lib/supabase/client";
 
 import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates, type Awareness } from "y-protocols/awareness";
-import { participantAppearance, type Participant } from "./participants";
+import { avatarOptions, participantAppearance, type Participant } from "./participants";
 export type { Participant } from "./participants";
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 type RoomOptions = {
@@ -35,6 +35,7 @@ export function connectRoomToSupabase(
           id: key,
           name: typeof user?.name === "string" ? user.name.slice(0, 40) : typeof entries[0]?.name === "string" ? entries[0].name.slice(0, 40) : "Guest",
           ...participantAppearance(key),
+          avatar: Number.isInteger(user?.avatar) && user.avatar >= 0 && user.avatar < avatarOptions.length ? user.avatar : participantAppearance(key).avatar,
         };
       });
     const snapshot = JSON.stringify(people);
