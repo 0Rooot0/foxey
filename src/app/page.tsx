@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { publicRoomClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/ThemeProvider";
 import FoxeyBrand from "@/components/FoxeyBrand";
+import AccountNav from "@/components/AccountNav";
 import WorkspacePreview from "@/components/WorkspacePreview";
 import Icon from "@/components/Icon";
 import "./home.css";
@@ -16,14 +17,13 @@ export default function Home() {
   const [joinError, setJoinError] = useState("");
   const [joiningRoom, setJoiningRoom] = useState(false);
   const [roomId, setRoomId] = useState("");
-  const [creatingRoom, setCreatingRoom] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
   function handleCreateRoom(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = roomName.trim();
-    if (name) router.push(`/room/${crypto.randomUUID()}?name=${encodeURIComponent(name)}`);
+    if (name) router.push(`/code?name=${encodeURIComponent(name)}`);
   }
 
   async function handleJoinRoom(event: React.FormEvent<HTMLFormElement>) {
@@ -33,7 +33,7 @@ export default function Home() {
     setJoinError("");
     setJoiningRoom(true);
     try {
-      const { data, error } = await supabase.from("room_states").select("room_id").eq("room_id", id).maybeSingle();
+      const { data, error } = await publicRoomClient.from("room_states").select("room_id").eq("room_id", id).maybeSingle();
       if (error) { setJoinError("Could not check the room. Please try again."); return; }
       if (!data) { setJoinError("Room not found. Check the room ID or use an invite link."); return; }
       router.push(`/room/${encodeURIComponent(id)}`);
@@ -56,7 +56,7 @@ export default function Home() {
           <a href="#teams" onClick={() => setMenuOpen(false)}>For Teams</a>
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
         </nav>
-        <div className="nav-actions"><ThemeToggle /><Link href="/code" className="button button-primary">Get Started</Link></div>
+        <div className="nav-actions"><ThemeToggle /><AccountNav /><Link href="/code" className="button button-primary">Get Started</Link></div>
       </header>
 
       <section id="main-content" className="hero">
@@ -88,11 +88,16 @@ export default function Home() {
       <section id="classroom" className="classroom-section">
         <div><p className="eyebrow">One link. Your whole team.</p><h2>Make room for<br />your next idea.</h2><p>Create a named coding room and share the invite. Everyone gets their own avatar and live cursor, with the same code and output.</p><p className="session-note">Room code and output are saved automatically. Check the save status before leaving.</p></div>
         <div className="room-card">
-          <h3>Join a coding room</h3><p>Enter a room ID or start a new session.</p>
+          <h3>Create a Room</h3><p>Name your room so classmates know where to meet.</p>
+          <form className="room-create-form" onSubmit={handleCreateRoom}>
+            <label htmlFor="room-name">Room name</label>
+            <input id="room-name" required maxLength={80} value={roomName} onChange={(event) => setRoomName(event.target.value)} placeholder="e.g. Python classroom" />
+            <button type="submit" className="button button-primary full-width" disabled={!roomName.trim()}>Create Room →</button>
+          </form>
+          <div className="room-divider">or join an existing room</div>
+          <h3 className="room-join-heading">Join a Room</h3>
           <form onSubmit={handleJoinRoom}><label htmlFor="room-id">Room ID</label><div className="input-row"><input id="room-id" required value={roomId} onChange={(event) => { setRoomId(event.target.value); setJoinError(""); }} placeholder="Enter room ID" /><button type="submit" className="button" disabled={joiningRoom || !roomId.trim()}>{joiningRoom ? "Checking..." : "Join →"}</button></div></form>
           {joinError && <p role="alert" className="room-error">{joinError}</p>}
-          <div className="room-divider">or code together in a new room</div>
-          {creatingRoom ? <form onSubmit={handleCreateRoom}><label htmlFor="room-name">Room name</label><input id="room-name" required maxLength={80} value={roomName} onChange={(event) => setRoomName(event.target.value)} placeholder="e.g. Python classroom" /><div className="input-row"><button type="submit" className="button button-primary" disabled={!roomName.trim()}>Create room</button><button type="button" className="button" onClick={() => setCreatingRoom(false)}>Cancel</button></div></form> : <button type="button" className="button button-primary full-width" onClick={() => setCreatingRoom(true)}>Create a Room <span>+</span></button>}
         </div>
       </section>
       <footer id="about" className="home-footer"><Link href="/" aria-label="Foxey home"><FoxeyBrand /></Link><p>Code together, go further. By Foxey Labs.</p><Link href="/code">Start Coding →</Link></footer>

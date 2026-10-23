@@ -1,4 +1,4 @@
-import CodeWorkspace from "@/components/CodeWorkspace";
+import WorkspaceEntry from "@/components/WorkspaceEntry";
 
 type RoomPageProps = {
   searchParams: Promise<{
@@ -24,7 +24,7 @@ export default async function RoomPage({
       : undefined;
 
   return (
-    <CodeWorkspace
+    <WorkspaceEntry
       key={roomId}
       roomId={roomId}
       roomName={roomName}

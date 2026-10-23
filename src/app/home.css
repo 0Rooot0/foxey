@@ -93,3 +93,7 @@
 
 .home .theme-control select { appearance: none; border: 0; background: transparent; padding: 5px 3px; }
 .home .theme-control select option { background: var(--home-bg); }
+
+.room-create-form label { margin-top: 18px; }
+.room-create-form button { margin-top: 16px; }
+.room-join-heading { margin: 0 0 16px !important; }

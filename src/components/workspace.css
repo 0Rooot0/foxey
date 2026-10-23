@@ -141,16 +141,14 @@
 .avatar-entry-card { width: min(100%, 610px); padding: 28px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 16px 50px #0002; }
 .avatar-entry-eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
 .avatar-entry-card h1 { margin: 10px 0; font-size: 26px; }
-.avatar-entry-card p { color: var(--muted); line-height: 1.5; }
+.avatar-entry-card p { margin: 10px 0; color: var(--muted); line-height: 1.5; }
 .avatar-entry-card > label { display: block; margin: 24px 0 8px; font-weight: 600; }
 .avatar-entry-card > input { width: 100%; padding: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); }
-.avatar-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 24px 0; }
-.avatar-option { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; padding: 10px 4px; border: 2px solid var(--border); border-radius: 10px; background: var(--surface-raised); color: var(--foreground); cursor: pointer; }
-.avatar-option:hover, .avatar-option.selected { border-color: var(--accent); }
-.avatar-option-label { font-size: 10px; text-align: center; }
 .avatar-entry-card > .edu-button { width: 100%; }
 .edu-settings .avatar-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 8px 0; }
 .edu-settings .avatar-option { padding: 5px 0; }
 .edu-settings .avatar-option-label { display: none; }
 .edu-settings .student-avatar { width: 32px !important; height: 32px !important; }
-@media (max-width: 480px) { .avatar-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } .avatar-entry-card { padding: 20px; } }
+@media (max-width: 480px) { .avatar-entry-card { padding: 20px; } }
+
+.workspace-room-id { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }

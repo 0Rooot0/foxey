@@ -8,3 +8,10 @@ export const supabase = createClient(
   supabaseUrl,
   supabasePublishableKey
 );
+
+// Public rooms remain accessible when a visitor also has a Foxey account.
+export const publicRoomClient = createClient(
+  supabaseUrl,
+  supabasePublishableKey,
+  { auth: { storageKey: "foxey-public-rooms", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+);
