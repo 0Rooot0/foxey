@@ -4,6 +4,7 @@ const PYODIDE_BASE_URL =
   "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/";
 
 type PyodideRuntime = {
+  globals: { set: (name: string, value: string) => void };
   runPythonAsync: (code: string) => Promise<unknown>;
   setStdout: (options: {
     batched: (text: string) => void;
@@ -45,12 +46,28 @@ async function getPyodide(): Promise<PyodideRuntime> {
 }
 
 workerScope.onmessage = async (
-  event: MessageEvent<{ code: string }>
+  event: MessageEvent<{ code: string; type?: "diagnostics"; id?: number }>
 ) => {
   const output: string[] = [];
 
   try {
     const pyodide = await getPyodide();
+    if (event.data.type === "diagnostics") {
+      pyodide.globals.set("_foxey_source", event.data.code);
+      const result = await pyodide.runPythonAsync(`
+import ast, json
+try:
+    compile(_foxey_source, "main.py", "exec", flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+    _foxey_error = None
+except SyntaxError as error:
+    _foxey_error = dict(message=f"{type(error).__name__}: {error.msg}",
+        lineno=error.lineno, offset=error.offset,
+        end_lineno=error.end_lineno, end_offset=error.end_offset)
+json.dumps(_foxey_error)
+`);
+      workerScope.postMessage({ id: event.data.id, error: JSON.parse(String(result)) });
+      return;
+    }
     workerScope.postMessage({ type: "ready" });
 
     pyodide.setStdout({
@@ -69,6 +86,7 @@ workerScope.onmessage = async (
         "Code finished with no output.",
     });
   } catch (error) {
+  if (event.data.type === "diagnostics") { workerScope.postMessage({ id: event.data.id, failed: true }); return; }
   const message = String(error);
 
   // Keep only useful traceback lines and report the student's source line

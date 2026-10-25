@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
+import { attachDiagnostics, configureJavaScript } from "@/lib/diagnostics/editorDiagnostics";
 import Link from "next/link";
 import { ThemeToggle, useTheme } from "@/components/ThemeProvider";
 import "./workspace.css";
@@ -58,6 +59,8 @@ export default function CodeWorkspace({
 
   const bindingRef =
     useRef<import("y-monaco").MonacoBinding | null>(null);
+  const diagnosticsRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => { diagnosticsRef.current?.(); }, []);
   const bindingGenerationRef = useRef(0);
   const [bindingReady, setBindingReady] = useState(false);
 
@@ -309,7 +312,7 @@ export default function CodeWorkspace({
           <div className="edu-toolbar">
             <div><span className="file-dot" /> <strong>{language === "python" ? "main.py" : "main.js"}</strong><span className="edu-toolbar-label">{roomId ? "Shared editor" : "Personal editor"}</span></div>
             <div className="edu-run-actions">
-              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { bindingGenerationRef.current++; bindingRef.current?.destroy(); bindingRef.current = null; editorRef.current = null; setBindingReady(false); awarenessRef.current?.setLocalStateField("selection", null); setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
+              <select aria-label="Programming language" value={language} disabled={isRunning} onChange={(event) => { diagnosticsRef.current?.(); diagnosticsRef.current = null; bindingGenerationRef.current++; bindingRef.current?.destroy(); bindingRef.current = null; editorRef.current = null; setBindingReady(false); awarenessRef.current?.setLocalStateField("selection", null); setLanguage(event.target.value as Language); }}><option value="python">Python</option><option value="javascript">JavaScript</option></select>
               <button className="edu-button edu-run" onClick={handleRun} disabled={isRunning}>{isRunning ? "Running…" : "▶ Run code"}</button>
               {isRunning && <button className="edu-button" onClick={handleCancel}>Cancel</button>}
             </div>
@@ -322,6 +325,7 @@ export default function CodeWorkspace({
               value={roomId ? undefined : code[language]}
               theme={theme === "dark" ? "foxey-dark" : "foxey-light"}
               beforeMount={(monaco) => {
+                configureJavaScript(monaco);
                 monaco.editor.defineTheme("foxey-dark", {
                   base: "vs-dark", inherit: true, rules: [],
                   colors: { "editor.background": "#0a1120", "editor.lineHighlightBackground": "#111d30", "editorLineNumber.foreground": "#61728e", "editor.selectionBackground": "#254b80" },
@@ -332,7 +336,10 @@ export default function CodeWorkspace({
                 });
               }}
               options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true, readOnly: Boolean(roomId && !bindingReady) }}
-              onMount={async (editorInstance) => {
+              onMount={async (editorInstance, monaco) => {
+                diagnosticsRef.current?.();
+                const diagnosticModel = editorInstance.getModel();
+                diagnosticsRef.current = diagnosticModel ? attachDiagnostics(monaco, diagnosticModel) : null;
                 editorRef.current = editorInstance;
                 if (!roomId || !ydocRef.current) return;
 
