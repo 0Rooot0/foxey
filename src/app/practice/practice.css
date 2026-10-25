@@ -1,0 +1,145 @@
+.practice {
+  max-width: 1500px;
+  margin: auto;
+  padding: 24px;
+}
+.practice-header,
+.practice-header nav,
+.practice-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.practice-header {
+  margin-bottom: 44px;
+}
+.practice h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  margin: 14px 0;
+}
+.practice h2 {
+  font-size: 19px;
+  font-weight: 650;
+  margin: 18px 0 10px;
+}
+.practice p {
+  color: var(--muted);
+  margin: 12px 0;
+}
+.practice a {
+  text-decoration: none;
+}
+.practice-eyebrow {
+  color: var(--accent) !important;
+}
+.practice-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 28px 0;
+}
+.practice label {
+  display: grid;
+  gap: 8px;
+}
+.practice input,
+.practice select,
+.practice button {
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.problem-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+.problem-card,
+.practice-description,
+.practice-work {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.problem-card {
+  padding: 22px;
+}
+.problem-card:hover {
+  border-color: var(--blue);
+}
+.problem-card > span:last-child {
+  color: var(--blue);
+  font-size: 14px;
+}
+.difficulty {
+  display: inline-block;
+  text-transform: capitalize;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 13px;
+}
+.practice-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.practice-tags span {
+  background: var(--surface-raised);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.practice-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 24px;
+  margin-top: 22px;
+}
+.practice-description {
+  padding: 24px;
+}
+.practice-prose {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.practice-work {
+  overflow: hidden;
+  min-width: 0;
+}
+.practice-toolbar,
+.practice-tests {
+  padding: 18px;
+}
+.practice-toolbar label {
+  display: flex;
+  align-items: center;
+}
+.practice-note {
+  font-size: 12px;
+  padding: 0 18px;
+}
+.practice-tests {
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 760px) {
+  .practice {
+    padding: 16px;
+  }
+  .practice-panes {
+    grid-template-columns: 1fr;
+  }
+  .practice-filters {
+    flex-direction: column;
+  }
+  .practice-header {
+    margin-bottom: 24px;
+  }
+}

@@ -52,6 +52,7 @@ export default function Home() {
         <button className="menu-toggle button" aria-expanded={menuOpen} aria-controls="home-nav" onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
         <nav id="home-nav" aria-label="Main navigation" className={menuOpen ? "home-nav is-open" : "home-nav"}>
           <a href="#home" className="nav-active" onClick={() => setMenuOpen(false)}>Home</a>
+          <Link href="/practice">Practice</Link>
           <a href="#classroom" onClick={() => setMenuOpen(false)}>For Classrooms</a>
           <a href="#teams" onClick={() => setMenuOpen(false)}>For Teams</a>
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
