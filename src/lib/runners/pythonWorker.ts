@@ -46,7 +46,7 @@ async function getPyodide(): Promise<PyodideRuntime> {
 }
 
 workerScope.onmessage = async (
-  event: MessageEvent<{ code: string; type?: "diagnostics"; id?: number }>
+  event: MessageEvent<{ code: string; type?: "diagnostics" | "practice"; id?: number }>
 ) => {
   const output: string[] = [];
 
@@ -78,6 +78,11 @@ json.dumps(_foxey_error)
       batched: (text) => output.push(text),
     });
 
+    if (event.data.type === "practice") {
+      const result = await pyodide.runPythonAsync(event.data.code);
+      workerScope.postMessage(JSON.parse(String(result)));
+      return;
+    }
     await pyodide.runPythonAsync(event.data.code);
 
     workerScope.postMessage({
@@ -87,6 +92,7 @@ json.dumps(_foxey_error)
     });
   } catch (error) {
   if (event.data.type === "diagnostics") { workerScope.postMessage({ id: event.data.id, failed: true }); return; }
+  if (event.data.type === "practice") { workerScope.postMessage({ status: "error", stdout: output.join("\n"), error: String(error) }); return; }
   const message = String(error);
 
   // Keep only useful traceback lines and report the student's source line
@@ -105,12 +111,12 @@ json.dumps(_foxey_error)
   const lineNumber =
     sourceLine?.match(/line (\d+)/)?.[1];
 
-  const output = lineNumber
+  const formattedOutput = lineNumber
     ? `Line ${lineNumber} — ${errorLine}`
     : errorLine;
 
   workerScope.postMessage({
-    output,
+    output: formattedOutput,
   });
 }
 };

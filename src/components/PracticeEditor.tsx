@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { practiceContract } from "@/lib/practice/contracts";
+import { createPracticeRunner } from "@/lib/practice/runner";
+import type { CaseResult } from "@/lib/practice/harness";
 import Editor from "@monaco-editor/react";
 import { useTheme } from "./ThemeProvider";
 import {
@@ -19,6 +22,32 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
     python: starterCode(problem, "python"),
     javascript: starterCode(problem, "javascript"),
   }));
+  const { contract, reason } = practiceContract(problem);
+  const runner = useRef<ReturnType<typeof createPracticeRunner> | null>(null);
+  const runId = useRef(0);
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState<(CaseResult | undefined)[]>([]);
+  const [notice, setNotice] = useState("");
+  const invalidate = (message = "") => {
+    runId.current++;
+    runner.current?.cancel();
+    setRunning(false);
+    setResults([]);
+    setNotice(message);
+  };
+  const run = async () => {
+    if (!contract) return;
+    invalidate();
+    runner.current ??= createPracticeRunner();
+    const id = runId.current;
+    setRunning(true);
+    setNotice("Running visible cases…");
+    await runner.current.run(language, code[language], contract, (result, index) => {
+      if (id === runId.current) setResults(previous => { const next = [...previous]; next[index] = result; return next; });
+    });
+    if (id === runId.current) { setRunning(false); setNotice("Visible case run complete."); }
+  };
+  useEffect(() => () => { runId.current++; runner.current?.cancel(); }, []);
   const diagnostics = useRef<(() => void) | null>(null);
   useEffect(() => () => diagnostics.current?.(), []);
   return (
@@ -46,13 +75,20 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
               Language{" "}
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
+                onChange={(e) => { invalidate(); setLanguage(e.target.value as Language); }}
               >
                 <option value="python">Python</option>
                 <option value="javascript">JavaScript</option>
               </select>
             </label>
-            <button disabled>Run · Coming soon</button>
+            <button disabled={!contract || running} onClick={run}>Run visible cases</button>
+            {running && <button onClick={() => {
+              runId.current++;
+              runner.current?.cancel();
+              setRunning(false);
+              setNotice("Execution cancelled.");
+              setResults(previous => contract!.cases.map((test, index) => previous[index] ?? { ...test, status: "cancelled", stdout: "", error: "Execution cancelled before this case completed." }));
+            }}>Cancel</button>}
           </div>
           <p className="practice-note">
             Drafts stay on this page only. Leaving or reloading resets your
@@ -102,13 +138,28 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
                 ? attachDiagnostics(monaco, model)
                 : null;
             }}
-            onChange={(value) =>
-              setCode((previous) => ({ ...previous, [language]: value ?? "" }))
-            }
+            onChange={(value) => {
+              invalidate();
+              setCode((previous) => ({ ...previous, [language]: value ?? "" }));
+            }}
           />
           <section className="practice-tests">
-            <h2>Test Cases</h2>
-            <p>Running code and testing examples are coming in PRACTICE-02.</p>
+            <h2>Visible test cases</h2>
+            {reason && <p>{reason}</p>}
+            {contract && <>
+              <p>Contract v{contract.version}: implement <code>{contract.functions[language]}({contract.parameters.join(", ")})</code> and return a JSON value synchronously. Arguments are positional; arrays keep their order and object key order does not matter. Each case starts fresh.</p>
+              <p>Only the cases below run locally in your browser. These results are for practice, not a trusted submission. JavaScript has 2 seconds per case; Python has 5 seconds after loading (up to 30 seconds). Timeout or cancellation may lose buffered logs.</p>
+              <p role="status">{notice}</p>
+              {contract.cases.map((test, index) => {
+                const result = results[index];
+                return <div className="practice-case" key={index}>
+                  <h3>Case {index + 1} · {result?.status ?? "Not run"}</h3>
+                  <pre>Arguments: {JSON.stringify(test.args)}{"\n"}Expected: {JSON.stringify(test.expected)}{"\n"}Actual: {result && "actual" in result ? JSON.stringify(result.actual) : "—"}</pre>
+                  {result?.error && <pre>{result.error}</pre>}
+                  {result?.stdout && <pre>stdout / logs:{"\n"}{result.stdout}</pre>}
+                </div>;
+              })}
+            </>}
           </section>
         </section>
       </div>
