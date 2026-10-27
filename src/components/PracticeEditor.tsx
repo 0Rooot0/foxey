@@ -5,6 +5,8 @@ import { practiceContract } from "@/lib/practice/contracts";
 import { createPracticeRunner } from "@/lib/practice/runner";
 import type { CaseResult } from "@/lib/practice/harness";
 import Editor from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
+import { createStarterPlaceholders } from "@/lib/practice/starterPlaceholder";
 import { useTheme } from "./ThemeProvider";
 import {
   attachDiagnostics,
@@ -22,6 +24,11 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
     python: starterCode(problem, "python"),
     javascript: starterCode(problem, "javascript"),
   }));
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const placeholders = useRef<ReturnType<typeof createStarterPlaceholders> | null>(null);
+  if (placeholders.current === null) {
+    placeholders.current = createStarterPlaceholders(starterCode(problem, "python"));
+  }
   const { contract, reason } = practiceContract(problem);
   const runner = useRef<ReturnType<typeof createPracticeRunner> | null>(null);
   const runId = useRef(0);
@@ -132,31 +139,48 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
               automaticLayout: true,
             }}
             onMount={(editor, monaco) => {
+              editorRef.current = editor;
               diagnostics.current?.();
               const model = editor.getModel();
               diagnostics.current = model
                 ? attachDiagnostics(monaco, model)
                 : null;
             }}
-            onChange={(value) => {
+            onChange={(value, event) => {
               invalidate();
-              setCode((previous) => ({ ...previous, [language]: value ?? "" }));
+              const editor = editorRef.current;
+              const model = editor?.getModel();
+              if (language === "python" && model) {
+                const removals = placeholders.current!.update(event.changes, event.isUndoing || event.isRedoing);
+                if (removals.length) editor!.executeEdits("starter-placeholder", removals.map(offset => {
+                  const start = model.getPositionAt(offset);
+                  const end = model.getPositionAt(offset + 4);
+                  return { range: { startLineNumber: start.lineNumber, startColumn: start.column, endLineNumber: end.lineNumber, endColumn: end.column }, text: "" };
+                }));
+              }
+              const next = model?.getValue() ?? value ?? "";
+              setCode((previous) => ({ ...previous, [language]: next }));
             }}
           />
           <section className="practice-tests">
             <h2>Visible test cases</h2>
             {reason && <p>{reason}</p>}
             {contract && <>
-              <p>Contract v{contract.version}: implement <code>{contract.functions[language]}({contract.parameters.join(", ")})</code> and return a JSON value synchronously. Arguments are positional; arrays keep their order and object key order does not matter. Each case starts fresh.</p>
-              <p>Only the cases below run locally in your browser. These results are for practice, not a trusted submission. JavaScript has 2 seconds per case; Python has 5 seconds after loading (up to 30 seconds). Timeout or cancellation may lose buffered logs.</p>
-              <p role="status">{notice}</p>
+              <p className="practice-run-status" role="status">{notice}</p>
               {contract.cases.map((test, index) => {
                 const result = results[index];
                 return <div className="practice-case" key={index}>
-                  <h3>Case {index + 1} · {result?.status ?? "Not run"}</h3>
-                  <pre>Arguments: {JSON.stringify(test.args)}{"\n"}Expected: {JSON.stringify(test.expected)}{"\n"}Actual: {result && "actual" in result ? JSON.stringify(result.actual) : "—"}</pre>
-                  {result?.error && <pre>{result.error}</pre>}
-                  {result?.stdout && <pre>stdout / logs:{"\n"}{result.stdout}</pre>}
+                  <div className="practice-case-header">
+                    <h3>Case {index + 1}</h3>
+                    <span className="practice-case-status">{result?.status ?? "Not run"}</span>
+                  </div>
+                  <dl className="practice-case-values">
+                    <div><dt>Arguments</dt><dd><pre>{JSON.stringify(test.args)}</pre></dd></div>
+                    <div><dt>Expected</dt><dd><pre>{JSON.stringify(test.expected)}</pre></dd></div>
+                    <div><dt>Actual</dt><dd><pre>{result && "actual" in result ? JSON.stringify(result.actual) : "—"}</pre></dd></div>
+                  </dl>
+                  {result?.error && <div className="practice-case-output"><h4>Error</h4><pre>{result.error}</pre></div>}
+                  {result?.stdout && <div className="practice-case-output"><h4>Logs</h4><pre>{result.stdout}</pre></div>}
                 </div>;
               })}
             </>}
