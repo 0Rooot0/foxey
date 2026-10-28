@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { pythonRunError } from "@/lib/diagnostics/pythonErrors";
 import { practiceContract } from "@/lib/practice/contracts";
+import { problemHelp } from "@/lib/practice/help";
+import PracticeHelp from "./PracticeHelp";
 import { createPracticeRunner } from "@/lib/practice/runner";
 import type { CaseResult } from "@/lib/practice/harness";
 import Editor from "@monaco-editor/react";
@@ -76,6 +78,7 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
           <div className="practice-prose">{problem.description}</div>
           <h2>Constraints</h2>
           <div className="practice-prose">{problem.constraints}</div>
+          <PracticeHelp key={problem.slug} content={problemHelp(problem)} />
         </article>
         <section className="practice-work" aria-label="Practice editor">
           <div className="practice-toolbar">

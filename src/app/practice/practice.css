@@ -194,3 +194,43 @@
   .practice-case-values > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
 .practice button:disabled { opacity: .55; cursor: not-allowed; }
+
+.practice-help {
+  margin-top: 28px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.practice-help h3 { font-size: 16px; font-weight: 650; margin: 22px 0 8px; }
+.practice-help p { line-height: 1.8; }
+.practice-help-confirm {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.practice-help-confirm h3 { margin-top: 0; }
+.practice-help-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.practice-help button { cursor: pointer; }
+.practice-help button:focus-visible,
+.practice-help pre:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.practice-walkthrough { min-width: 0; }
+.practice-walkthrough pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.practice-description { min-width: 0; }
+@media (max-width: 420px) {
+  .practice-description { padding: 16px; }
+  .practice-help-actions { flex-direction: column; }
+}
