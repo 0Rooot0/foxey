@@ -17,6 +17,7 @@ export default function PracticeLayout({
         </Link>
         <nav aria-label="Practice navigation">
           <Link href="/practice">Practice</Link>
+          <Link href="/companies">Companies</Link>
           <ThemeToggle />
           <AccountNav />
         </nav>

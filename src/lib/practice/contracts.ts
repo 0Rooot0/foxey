@@ -153,9 +153,16 @@ export const contracts: Record<string, Contract> = {
     }
   }
 };
+const blockedRunReasons = new Map<string, string>([
+  ["two-number-sum", "Run unavailable: the first example has two valid pairs, [0, 3] and [1, 2], but the description promises exactly one. The problem needs review."],
+  ["merge-sorted-lists", "Run unavailable: linked lists need explicit input and output node adapters. Array examples cannot be passed directly to this starter."],
+]);
+export function blockedRunReason(slug: string) {
+  return blockedRunReasons.get(slug);
+}
 export function practiceContract(problem: Problem): { contract?: Contract; reason?: string } {
-  if (problem.slug === "two-number-sum") return { reason: "Run unavailable: the first example has two valid pairs, [0, 3] and [1, 2], but the description promises exactly one. The problem needs review." };
-  if (problem.slug === "merge-sorted-lists") return { reason: "Run unavailable: linked lists need explicit input and output node adapters. Array examples cannot be passed directly to this starter." };
+  const reason = blockedRunReason(problem.slug);
+  if (reason) return { reason };
   const contract = contracts[problem.slug];
   if (!contract) return { reason: "Run unavailable: this problem has no reviewed callable contract." };
   if (Object.entries(contract.baseline).some(([key, value]) => problem[key as keyof typeof contract.baseline].replace(/\r\n/g, "\n") !== value)) return { reason: "Run unavailable: the problem content changed. Its callable contract needs review." };

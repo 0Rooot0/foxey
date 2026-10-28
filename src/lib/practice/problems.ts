@@ -23,8 +23,8 @@ export function starterCode(
     ? problem.starter_code_python
     : problem.starter_code_javascript;
 }
-export function filterProblems(
-  problems: Problem[],
+export function filterProblems<T extends Pick<Problem, "title" | "difficulty" | "problem_tags">>(
+  problems: T[],
   search: string,
   difficulty: string,
   topic: string,
@@ -36,7 +36,7 @@ export function filterProblems(
       (!topic || problem.problem_tags.some(({ tag }) => tag === topic)),
   );
 }
-export function problemTopics(problems: Problem[]) {
+export function problemTopics(problems: Pick<Problem, "problem_tags">[]) {
   return [
     ...new Set(
       problems.flatMap((problem) => problem.problem_tags.map(({ tag }) => tag)),
