@@ -8,6 +8,7 @@ import { ThemeToggle, useTheme } from "@/components/ThemeProvider";
 import "./workspace.css";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
+import { prepareSharedModel } from "@/lib/collaboration/sharedModel";
 import { persistRoom, type SaveStatus } from "@/lib/collaboration/roomPersistence";
 import { supabaseRoomStore } from "@/lib/collaboration/supabaseRoomStore";
 import { publicRoomClient } from "@/lib/supabase/client";
@@ -335,7 +336,7 @@ export default function CodeWorkspace({
                   colors: { "editor.background": "#ffffff", "editor.lineHighlightBackground": "#f3f6fc", "editorLineNumber.foreground": "#8190a8" },
                 });
               }}
-              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true, readOnly: Boolean(roomId && !bindingReady) }}
+              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true, tabSize: 4, insertSpaces: true, detectIndentation: false, readOnly: Boolean(roomId && !bindingReady) }}
               onMount={async (editorInstance, monaco) => {
                 diagnosticsRef.current?.();
                 const diagnosticModel = editorInstance.getModel();
@@ -352,7 +353,9 @@ export default function CodeWorkspace({
 
                 const { MonacoBinding } = await import("y-monaco");
                 if (generation !== bindingGenerationRef.current || editorRef.current !== editorInstance || ydocRef.current !== doc || editorInstance.getModel() !== model || model.isDisposed()) return;
-                bindingRef.current = new MonacoBinding(doc.getText(`code:${language}`), model, new Set([editorInstance]), awarenessRef.current);
+                const sharedText = doc.getText(`code:${language}`);
+                prepareSharedModel(model, sharedText);
+                bindingRef.current = new MonacoBinding(sharedText, model, new Set([editorInstance]), awarenessRef.current);
                 setBindingReady(true);
               }}
               onChange={roomId ? undefined : (value) =>

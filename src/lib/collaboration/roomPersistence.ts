@@ -1,4 +1,5 @@
 import * as Y from "yjs";
+import { applyRoomUpdate } from "./sharedModel";
 
 export type SavedState = { format: "yjs-v1"; update: number[] };
 export type StoredRoom = { state: unknown; revision: string };
@@ -47,7 +48,7 @@ export function persistRoom(doc: Y.Doc, store: RoomStore, options: {
         try {
           const saved = await saveMergedState(store, update);
           if (!stopped) {
-            Y.applyUpdate(doc, saved, origin);
+            applyRoomUpdate(doc, saved, origin);
             cache(Y.encodeStateAsUpdate(doc));
           }
           if (!pending) status("saved");
@@ -73,14 +74,14 @@ export function persistRoom(doc: Y.Doc, store: RoomStore, options: {
   status("loading");
   try {
     const local = options.readLocal();
-    if (local) { Y.applyUpdate(doc, decodeState(local), origin); pending = Y.encodeStateAsUpdate(doc); }
+    if (local) { applyRoomUpdate(doc, decodeState(local), origin); pending = Y.encodeStateAsUpdate(doc); }
   } catch { status("error"); }
   doc.on("update", changed);
   async function hydrate() {
     try {
       const saved = await store.read();
       if (stopped) return;
-      if (saved?.state != null) Y.applyUpdate(doc, decodeState(saved.state), origin);
+      if (saved?.state != null) applyRoomUpdate(doc, decodeState(saved.state), origin);
       cache(Y.encodeStateAsUpdate(doc));
       if (pending || running) { if (pending) pending = Y.encodeStateAsUpdate(doc); await flush(); }
       else status("saved");

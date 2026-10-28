@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { pythonRunError } from "@/lib/diagnostics/pythonErrors";
 import { practiceContract } from "@/lib/practice/contracts";
 import { createPracticeRunner } from "@/lib/practice/runner";
 import type { CaseResult } from "@/lib/practice/harness";
@@ -137,6 +138,9 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
               padding: { top: 20 },
               scrollBeyondLastLine: false,
               automaticLayout: true,
+              tabSize: 4,
+              insertSpaces: true,
+              detectIndentation: false,
             }}
             onMount={(editor, monaco) => {
               editorRef.current = editor;
@@ -179,7 +183,7 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
                     <div><dt>Expected</dt><dd><pre>{JSON.stringify(test.expected)}</pre></dd></div>
                     <div><dt>Actual</dt><dd><pre>{result && "actual" in result ? JSON.stringify(result.actual) : "—"}</pre></dd></div>
                   </dl>
-                  {result?.error && <div className="practice-case-output"><h4>Error</h4><pre>{result.error}</pre></div>}
+                  {result?.error && <div className="practice-case-output"><h4>Error</h4><pre>{language === "python" ? pythonRunError(result.error) : result.error}</pre></div>}
                   {result?.stdout && <div className="practice-case-output"><h4>Logs</h4><pre>{result.stdout}</pre></div>}
                 </div>;
               })}

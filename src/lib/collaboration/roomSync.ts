@@ -1,4 +1,5 @@
 import * as Y from "yjs";
+import { applyRoomUpdate } from "./sharedModel";
 import { supabase } from "@/lib/supabase/client";
 
 import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates, type Awareness } from "y-protocols/awareness";
@@ -65,7 +66,7 @@ export function connectRoomToSupabase(
 
   function applyRemote(update: unknown) {
     if (!Array.isArray(update) || !update.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)) return;
-    try { Y.applyUpdate(ydoc, new Uint8Array(update), "remote"); } catch { /* Ignore malformed peer updates without interrupting the room. */ }
+    try { applyRoomUpdate(ydoc, new Uint8Array(update), "remote"); } catch { /* Ignore malformed peer updates without interrupting the room. */ }
   }
 
   channel.on("broadcast", { event: "yjs-update" }, ({ payload }) => {

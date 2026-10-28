@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import { briefPythonError, pythonRunError } from "../diagnostics/pythonErrors";
 
 const PYODIDE_BASE_URL =
   "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/";
@@ -65,7 +66,9 @@ except SyntaxError as error:
         end_lineno=error.end_lineno, end_offset=error.end_offset)
 json.dumps(_foxey_error)
 `);
-      workerScope.postMessage({ id: event.data.id, error: JSON.parse(String(result)) });
+      const error = JSON.parse(String(result));
+      if (error) error.message = briefPythonError(error.message);
+      workerScope.postMessage({ id: event.data.id, error });
       return;
     }
     workerScope.postMessage({ type: "ready" });
@@ -93,30 +96,6 @@ json.dumps(_foxey_error)
   } catch (error) {
   if (event.data.type === "diagnostics") { workerScope.postMessage({ id: event.data.id, failed: true }); return; }
   if (event.data.type === "practice") { workerScope.postMessage({ status: "error", stdout: output.join("\n"), error: String(error) }); return; }
-  const message = String(error);
-
-  // Keep only useful traceback lines and report the student's source line
-  // together with the final Python error.
-  const lines = message
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const errorLine = lines.at(-1) ?? message;
-
-  const sourceLine = [...lines]
-    .reverse()
-    .find((line) => line.includes('File "<exec>", line '));
-
-  const lineNumber =
-    sourceLine?.match(/line (\d+)/)?.[1];
-
-  const formattedOutput = lineNumber
-    ? `Line ${lineNumber} — ${errorLine}`
-    : errorLine;
-
-  workerScope.postMessage({
-    output: formattedOutput,
-  });
+  workerScope.postMessage({ output: pythonRunError(String(error)) });
 }
 };

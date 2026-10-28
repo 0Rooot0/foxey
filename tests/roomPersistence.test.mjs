@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as Y from "yjs";
 import { Awareness } from "y-protocols/awareness";
-import { persistRoom, saveMergedState, decodeState } from "../src/lib/collaboration/roomPersistence.ts";
+import { readFile } from "node:fs/promises";
+import { stripTypeScriptTypes } from "node:module";
+let persistenceSource = await readFile(new URL('../src/lib/collaboration/roomPersistence.ts', import.meta.url), 'utf8');
+persistenceSource = persistenceSource.replace('"./sharedModel"', JSON.stringify(new URL('../src/lib/collaboration/sharedModel.ts', import.meta.url).href)).replace('"yjs"', JSON.stringify(new URL('../node_modules/yjs/dist/yjs.mjs', import.meta.url).href));
+const { persistRoom, saveMergedState, decodeState } = await import('data:text/javascript,' + encodeURIComponent(stripTypeScriptTypes(persistenceSource)));
 
 function database() {
   const rows = new Map();
