@@ -165,6 +165,10 @@
   font-size: 12px;
   text-transform: capitalize;
 }
+.practice-case-status[data-status="passed"] { color: light-dark(#15803d, #4ade80); }
+.practice-case-status[data-status="failed"],
+.practice-case-status[data-status="error"],
+.practice-case-status[data-status="timeout"] { color: light-dark(#b91c1c, #f87171); }
 .practice-case-values { display: grid; gap: 8px; margin: 0; }
 .practice-case-values > div {
   display: grid;

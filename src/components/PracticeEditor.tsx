@@ -172,7 +172,7 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
                 return <div className="practice-case" key={index}>
                   <div className="practice-case-header">
                     <h3>Case {index + 1}</h3>
-                    <span className="practice-case-status">{result?.status ?? "Not run"}</span>
+                    <span className="practice-case-status" data-status={result?.status}>{result?.status ?? "Not run"}</span>
                   </div>
                   <dl className="practice-case-values">
                     <div><dt>Arguments</dt><dd><pre>{JSON.stringify(test.args)}</pre></dd></div>
