@@ -136,7 +136,7 @@ export default function PracticeEditor({ problem }: { problem: Problem }) {
               minimap: { enabled: false },
               fontSize: 14,
               padding: { top: 20 },
-              scrollBeyondLastLine: false,
+              scrollBeyondLastLine: true,
               automaticLayout: true,
               tabSize: 4,
               insertSpaces: true,

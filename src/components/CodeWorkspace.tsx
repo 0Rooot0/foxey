@@ -336,7 +336,7 @@ export default function CodeWorkspace({
                   colors: { "editor.background": "#ffffff", "editor.lineHighlightBackground": "#f3f6fc", "editorLineNumber.foreground": "#8190a8" },
                 });
               }}
-              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: false, automaticLayout: true, tabSize: 4, insertSpaces: true, detectIndentation: false, readOnly: Boolean(roomId && !bindingReady) }}
+              options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 20 }, scrollBeyondLastLine: true, automaticLayout: true, tabSize: 4, insertSpaces: true, detectIndentation: false, readOnly: Boolean(roomId && !bindingReady) }}
               onMount={async (editorInstance, monaco) => {
                 diagnosticsRef.current?.();
                 const diagnosticModel = editorInstance.getModel();
